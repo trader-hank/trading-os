@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0e12;--surface:#14171d;--surface2:#1b1f27;--surface3:#22272f;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);--text:#e9e7e1;--muted:#9b988f;--faint:#6c6a64;--gold:#e0a23e;--gold-soft:rgba(224,162,62,.10);--gold-line:rgba(224,162,62,.4);--teal:#52cdc0;--teal-soft:rgba(82,205,192,.08);--green:#6fc08b;--green-soft:rgba(111,192,139,.12);--red:#e2746b;--red-soft:rgba(226,116,107,.12);--serif:'Fraunces',Georgia,serif;--sans:'Archivo',sans-serif;--mono:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.app{max-width:1080px;margin:0 auto;padding:0 24px 100px}
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(12,14,18,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin:0 -24px 0;padding:16px 24px 0}
+.brandrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.brand{font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.01em}
+.brand span{color:var(--gold)}
+.brandrow .tools{display:flex;gap:8px}
+.brandrow .tools button{background:var(--surface2);border:1px solid var(--line2);color:var(--muted);font-family:var(--mono);font-size:10.5px;padding:6px 10px;border-radius:6px;cursor:pointer;letter-spacing:.04em}
+.brandrow .tools button:hover{color:var(--gold);border-color:var(--gold-line)}
+.tabs{display:flex;gap:2px;overflow-x:auto}
+.tabs button{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:11px 16px;cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{color:var(--gold);border-bottom-color:var(--gold)}
+.tabs button .badge{display:inline-block;margin-left:6px;background:var(--surface3);color:var(--text);font-size:10px;padding:1px 6px;border-radius:8px}
+/* recovery banner */
+.recbar{display:none;margin:18px 0 0;border:1px solid var(--red);background:var(--red-soft);border-radius:11px;padding:13px 17px}
+.recbar.show{display:block}
+.recbar .rt{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:4px}
+.recbar p{font-size:12.5px;color:var(--text);margin:0}
+.view{display:none;padding-top:24px}.view.on{display:block}
+.vhead{margin-bottom:18px}
+.vhead h2{font-family:var(--serif);font-size:27px;font-weight:500}
+.vhead .sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;margin-top:3px}
+/* generic card/panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:13px;margin-bottom:16px;overflow:hidden}
+.p-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface2)}
+.p-head .t{font-family:var(--serif);font-size:17px;font-weight:500}.p-head .q{font-family:var(--mono);font-size:10px;color:var(--faint);margin-left:auto;letter-spacing:.03em}
+.p-body{padding:18px}
+.fld{margin-bottom:14px}.fld:last-child{margin-bottom:0}
+.fld label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.fld label .opt{color:var(--faint);text-transform:none;letter-spacing:0}
+input[type=text],input[type=number],input[type=date],textarea,select{width:100%;background:#0f1115;border:1px solid var(--line2);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:14px;padding:9px 11px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold)}
+textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var(--faint)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:11px}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+@media(max-width:640px){.row,.row3{grid-template-columns:1fr}}
+.seg{display:flex;gap:5px;flex-wrap:wrap}
+.seg button{flex:1;min-width:54px;background:#0f1115;border:1px solid var(--line2);color:var(--muted);font-family:var(--mono);font-size:11px;padding:8px 5px;border-radius:7px;cursor:pointer;letter-spacing:.02em}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+.seg button.on.danger{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+.seg button.on.good{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.btn{background:var(--gold);color:#1a1206;border:none;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.04em;padding:11px 18px;border-radius:8px;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line2)}
+.btn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn.sm{padding:7px 12px;font-size:11px}
+.btn.danger{background:var(--red-soft);color:var(--red);border:1px solid rgba(226,116,107,.4)}
+.btn.danger:hover{background:rgba(226,116,107,.2)}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.hint{font-family:var(--serif);font-style:italic;font-size:12px;color:var(--faint);margin-top:6px}
+.empty{font-family:var(--serif);font-style:italic;color:var(--faint);padding:26px;text-align:center;font-size:14px}
+/* dashboard stat grid */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:15px 16px}
+.stat .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.stat .v{font-family:var(--serif);font-size:25px;font-weight:500;line-height:1}
+.stat .v.pos{color:var(--green)}.stat .v.neg{color:var(--red)}
+.stat .d{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px}
+/* list cards */
+.lc{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-bottom:10px;background:var(--surface)}
+.lc .lc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.lc .lc-title{font-family:var(--serif);font-size:16px;font-weight:500}
+.lc .lc-meta{font-family:var(--mono);font-size:10.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.lc .lc-body{font-size:13px;color:var(--muted);line-height:1.5;margin:6px 0}
+.lc .lc-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;padding:2px 8px;border-radius:10px;border:1px solid var(--line2);color:var(--muted);text-transform:uppercase}
+.chip.A{color:var(--green);border-color:rgba(111,192,139,.4)}
+.chip.B{color:var(--gold);border-color:var(--gold-line)}
+.chip.C{color:var(--muted)}
+.chip.g{color:var(--green);border-color:rgba(111,192,139,.4)}.chip.y{color:var(--gold);border-color:var(--gold-line)}.chip.r{color:var(--red);border-color:rgba(226,116,107,.4)}
+.chip.teal{color:var(--teal);border-color:rgba(82,205,192,.4)}
+.chip.pnlpos{color:var(--green)}.chip.pnlneg{color:var(--red)}
+.permbox{margin-top:8px;border-radius:8px;padding:9px 12px;font-family:var(--mono);font-size:11.5px;line-height:1.5;display:none}
+.permbox.show{display:block}.permbox.g{background:var(--green-soft);border:1px solid rgba(111,192,139,.4);color:var(--green)}.permbox.y{background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold)}.permbox.r{background:var(--red-soft);border:1px solid var(--red);color:var(--red)}.permbox b{color:var(--text)}.permbox .wo{display:block;margin-top:4px;color:var(--faint)}
+/* gate verdict */
+.gategrid{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+@media(max-width:880px){.gategrid{grid-template-columns:1fr}}
+.verdict{border-radius:13px;border:1px solid var(--line);overflow:hidden}
+.v-light{padding:20px;text-align:center}.v-state{font-family:var(--mono);font-size:12.5px;letter-spacing:.28em;text-transform:uppercase;font-weight:700}.v-sub{font-family:var(--serif);font-size:18px;font-weight:500;margin-top:5px}
+.verdict.red .v-light{background:var(--red-soft)}.verdict.red .v-state{color:var(--red)}.verdict.red{border-color:var(--red)}
+.verdict.amber .v-light{background:var(--gold-soft)}.verdict.amber .v-state{color:var(--gold)}.verdict.amber{border-color:var(--gold-line)}
+.verdict.green .v-light{background:var(--green-soft)}.verdict.green .v-state{color:var(--green)}.verdict.green{border-color:var(--green)}
+.v-reasons{background:var(--surface);padding:14px 16px;border-top:1px solid var(--line);max-height:300px;overflow-y:auto}
+.v-reasons .rh{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.v-reasons ul{list-style:none}.v-reasons li{font-size:12px;padding:5px 0 5px 17px;position:relative;color:var(--muted);line-height:1.4}
+.v-reasons li::before{position:absolute;left:0;top:5px;font-family:var(--mono);font-size:10.5px}
+.v-reasons li.ok::before{content:'✓';color:var(--green)}.v-reasons li.warn::before{content:'!';color:var(--gold);font-weight:700}.v-reasons li.fail::before{content:'×';color:var(--red);font-weight:700}.v-reasons li.todo::before{content:'·';color:var(--faint)}
+.v-reasons li b{color:var(--text)}
+.computed{font-family:var(--mono);font-size:11.5px;color:var(--teal);margin-top:7px}.computed b{color:var(--text)}
+.dvhelper{border:1px solid var(--line);border-radius:9px;padding:11px;margin-top:9px;background:#0f1115}
+.dvhelper .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:9px}
+.pnlstrip{display:flex;gap:8px;margin-bottom:14px}
+.pnlstrip .pc{flex:1;background:#0f1115;border:1px solid var(--line2);border-radius:8px;padding:9px 11px;text-align:center}
+.pnlstrip .pc .pk{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.pnlstrip .pc .pv{font-family:var(--mono);font-size:14px;font-weight:700;margin-top:3px}
+.pnlstrip .pc .pv.pos{color:var(--green)}.pnlstrip .pc .pv.neg{color:var(--red)}
+.flag{font-family:var(--mono);font-size:11px;margin-top:8px;padding:7px 10px;border-radius:7px;line-height:1.45;display:none}.flag.show{display:block}.flag.red{background:var(--red-soft);border-left:2px solid var(--red);color:var(--red)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);border:1px solid var(--gold-line);color:var(--text);font-family:var(--mono);font-size:12px;padding:11px 18px;border-radius:9px;opacity:0;transition:all .25s;z-index:50;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.ticket{margin-top:14px;background:#0f1115;border:1px solid var(--gold-line);border-radius:11px;overflow:hidden}
+.ticket .th{padding:10px 14px;background:var(--gold-soft);border-bottom:1px solid var(--line);font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+#ticketOut{padding:13px 14px;font-family:var(--mono);font-size:11.5px;line-height:1.65;color:#cfccc4;white-space:pre-wrap}
+.copyline{font-family:var(--mono);font-size:11px;white-space:pre-wrap;background:#0f1115;border:1px solid var(--line2);border-radius:8px;padding:12px;color:#cfccc4;line-height:1.6;max-height:220px;overflow:auto}
+.foot{margin-top:40px;font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brandrow">
+      <div class="brand">Trading <span>OS</span></div>
+      <div class="tools">
+        <button onclick="backup()">⤓ Backup</button>
+        <button onclick="document.getElementById('restoreFile').click()">Restore</button>
+        <button onclick="wipeData()" style="color:var(--red);border-color:rgba(226,116,107,.4)">Reset</button>
+        <input type="file" id="restoreFile" accept="application/json" style="display:none" onchange="restore(event)">
+      </div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button data-v="today" class="on" onclick="go('today')">Today</button>
+      <button data-v="prep" onclick="go('prep')">Morning Prep</button>
+      <button data-v="theses" onclick="go('theses')">Theses<span class="badge" id="bThe">0</span></button>
+      <button data-v="gate" onclick="go('gate')">Gate</button>
+      <button data-v="watch" onclick="go('watch')">Watchlist<span class="badge" id="bWatch">0</span></button>
+      <button data-v="journal" onclick="go('journal')">Journal<span class="badge" id="bJrn">0</span></button>
+    </div>
+  </div>
+
+  <div class="recbar" id="recBar"><div class="rt">Recovery mode — active</div><p id="recText"></p></div>
+
+  <!-- TODAY -->
+  <div class="view on" id="v-today">
+    <div class="vhead"><h2 id="todayTitle">Today</h2><div class="sub">Automate everything except idea generation and execution.</div></div>
+    <div class="panel"><div class="p-head"><span class="t">Today's P&amp;L mark</span><span class="q">// drives recovery &amp; the limits</span></div><div class="p-body">
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div class="fld" style="margin:0;flex:1;min-width:180px"><label>Your blotter P&amp;L for today ($) <span class="opt">— realized + open-position marks</span></label><input type="number" id="todayMark" placeholder="−4,200"></div>
+        <button class="btn" onclick="saveTodayMark()">Update mark</button>
+      </div>
+      <div class="hint" id="markHint"></div>
+      <div id="marksLedger" style="margin-top:14px"></div>
+    </div></div>
+    <div class="stats" id="todayStats"></div>
+    <div class="panel"><div class="p-head"><span class="t">This morning's prep</span><span class="q" id="prepStatus"></span></div><div class="p-body" id="todayPrep"></div></div>
+    <div class="row">
+      <div class="panel"><div class="p-head"><span class="t">Top theses</span></div><div class="p-body" id="todayTheses"></div></div>
+      <div class="panel"><div class="p-head"><span class="t">Watchlist</span></div><div class="p-body" id="todayWatch"></div></div>
+    </div>
+  </div>
+
+  <!-- PREP -->
+  <div class="view" id="v-prep">
+    <div class="vhead"><h2>Morning Prep</h2><div class="sub">A permissioning document — it should reduce possible trades, not create more.</div></div>
+    <div class="panel"><div class="p-body">
+      <div class="row"><div class="fld"><label>Date</label><input type="date" id="pp_date"></div>
+        <div class="fld"><label>State check — how are you walking in?</label><div class="seg" id="pp_state">
+          <button data-v="A" onclick="seg('pp_state',this)">Calm/focused</button><button data-v="C" onclick="seg('pp_state',this)">Off/behind</button></div></div></div>
+      <div class="fld"><label>Market state <span class="opt">— risk on/off? what changed since yesterday?</span></label><textarea id="pp_market" placeholder="Risk on/off, inflation/growth, overnight changes..."></textarea></div>
+      <div class="fld"><label>Top narrative <span class="opt">— one sentence, ranked if more than one</span></label><textarea id="pp_narr" placeholder="The single thing driving your tape today."></textarea></div>
+      <div class="fld"><label>Calendar / catalysts</label><textarea id="pp_cal" placeholder="What can change the narrative today or this week?"></textarea></div>
+
+      <div class="fld"><label>Positions on the book <span class="opt">— what you're holding, how big, why, and where you're wrong</span></label>
+        <div id="pp_posList"></div>
+        <button class="btn ghost sm" onclick="addPrepPos()" style="margin-top:8px">+ Add position</button></div>
+
+      <div class="fld"><label>Today's plan / allowed trades <span class="opt">— product · direction · level/trigger · stop · size · hold</span></label>
+        <div id="pp_allowedList"></div>
+        <button class="btn ghost sm" onclick="addAllowed()" style="margin-top:8px">+ Add a planned trade</button></div>
+      <div class="fld"><label>Disallowed today <span class="opt">— tempting trades that are off-limits</span></label><textarea id="pp_dis" placeholder="What not to touch."></textarea></div>
+      <div class="fld"><label>What I'm thinking <span class="opt">— the day in your own words; goes at the end of the note</span></label><textarea id="pp_summary" placeholder="The honest read — what you're watching for, what would change your mind, how you want to behave today." style="min-height:70px"></textarea></div>
+      <div class="btnrow"><button class="btn" onclick="savePrep()">Save prep</button><button class="btn ghost" onclick="buildPrepText()">Build group message</button></div>
+      <div id="pp_out" style="margin-top:14px;display:none"><div class="fld"><label>Group message <span class="opt">— copy to email/Slack</span></label><div class="copyline" id="pp_copy"></div><div class="btnrow"><button class="btn ghost sm" onclick="copyPrep()">Copy</button></div></div></div>
+    </div></div>
+  </div>
+
+  <!-- THESES -->
+  <div class="view" id="v-theses">
+    <div class="vhead"><h2>Thesis Book</h2><div class="sub">A living document. Grade them, edit them, watch them work or break.</div></div>
+    <div class="panel" id="thesisFormPanel"><div class="p-head"><span class="t" id="thesisFormTitle">New thesis</span><span class="q" id="thesisEditingId"></span></div><div class="p-body">
+      <div class="row"><div class="fld"><label>Title</label><input type="text" id="th_title" placeholder="Warsh regime shift / Japan normalization..."></div>
+        <div class="fld"><label>Products</label><input type="text" id="th_products" placeholder="ZT, SR3, UB..."></div></div>
+      <div class="row3">
+        <div class="fld"><label>Conviction</label><div class="seg" id="th_conv"><button data-v="A" onclick="seg('th_conv',this)">A</button><button data-v="B" onclick="seg('th_conv',this)">B</button><button data-v="C" onclick="seg('th_conv',this)">C</button></div></div>
+        <div class="fld"><label>Direction</label><div class="seg" id="th_dir"><button data-v="Long" onclick="seg('th_dir',this)">Long</button><button data-v="Short" onclick="seg('th_dir',this)">Short</button><button data-v="RV" onclick="seg('th_dir',this)">RV</button></div></div>
+        <div class="fld"><label>Status</label><div class="seg" id="th_status"><button data-v="active" onclick="seg('th_status',this)">Active</button><button data-v="watch" onclick="seg('th_status',this)">Watch</button><button data-v="closed" onclick="seg('th_status',this)">Closed</button></div></div>
+      </div>
+      <div class="fld"><label>Narrative / transmission</label><textarea id="th_narr" placeholder="The 2nd/3rd-order chain you're expressing."></textarea></div>
+      <div class="row"><div class="fld"><label>Catalysts</label><input type="text" id="th_cat" placeholder="dates / events that move it"></div>
+        <div class="fld"><label>Invalidation</label><input type="text" id="th_inval" placeholder="what proves it wrong"></div></div>
+      <div class="btnrow"><button class="btn" onclick="saveThesis()">Save thesis</button><button class="btn ghost" id="thesisCancel" onclick="resetThesisForm()" style="display:none">Cancel edit</button></div>
+    </div></div>
+    <div id="thesisList"></div>
+  </div>
+
+  <!-- GATE -->
+  <div class="view" id="v-gate">
+    <div class="vhead"><h2>The Gate</h2><div class="sub">Earn the right to hold big. Collapse size the instant conditions aren't there.</div></div>
+    <div class="gategrid">
+      <div>
+        <div class="panel"><div class="p-head"><span class="t">Where you stand</span><span class="q">// pulled from your journal</span></div><div class="p-body">
+          <div class="pnlstrip" id="gatePnl"></div>
+          <div class="fld"><label>Right now, are you clear-headed — or tired, rushed, frustrated, or chasing?</label>
+            <div class="seg" id="g_ready"><button data-v="clear" onclick="seg('g_ready',this)">Clear &amp; rested</button><button data-v="off" onclick="seg('g_ready',this)">Off</button></div>
+            <div class="hint">Off = half size, no adds, no new product. Be honest.</div></div>
+        </div></div>
+
+        <div class="panel"><div class="p-head"><span class="t">Mode &amp; idea</span></div><div class="p-body">
+          <div class="fld"><label>Link a thesis <span class="opt">— prefills the idea</span></label><select id="g_thesis" onchange="linkThesis()"></select></div>
+          <div class="fld"><label>Mode</label><div class="seg" id="g_mode"><button data-v="pos" onclick="seg('g_mode',this)">Position</button><button data-v="tac" onclick="seg('g_mode',this)">Tactical</button></div><div class="hint" id="g_modeHint"></div></div>
+          <div class="row"><div class="fld"><label>Instrument</label><input type="text" id="g_inst" placeholder="ZT, NKD, CL..." oninput="gate()"></div>
+            <div class="fld"><label>Direction</label><div class="seg" id="g_dir"><button data-v="long" onclick="seg('g_dir',this)">Long</button><button data-v="short" onclick="seg('g_dir',this)">Short</button></div></div></div>
+          <div class="permbox" id="g_perm"></div>
+          <div class="fld" style="margin-top:12px"><label>Engine</label><div class="seg" id="g_eng"><button data-v="cat" onclick="seg('g_eng',this)">Catalyst</button><button data-v="fade" onclick="seg('g_eng',this)">Fade</button><button data-v="data" onclick="seg('g_eng',this)">Data</button></div></div>
+          <div class="fld"><label>Written thesis?</label><div class="seg" id="g_prep"><button data-v="yes" onclick="seg('g_prep',this)">Written</button><button data-v="thin" onclick="seg('g_prep',this)">"chance"</button><button data-v="no" onclick="seg('g_prep',this)">None</button></div></div>
+          <div class="fld"><label>One-sentence thesis</label><textarea id="g_thtext" placeholder="View + transmission." oninput="gate()"></textarea></div>
+          <div class="fld"><label>Written invalidation</label><input type="text" id="g_inval" placeholder="level/event that proves it wrong" oninput="gate()"></div>
+          <div class="row"><div class="fld"><label>Reward : Risk</label><input type="number" id="g_rr" step="0.1" placeholder="≥2.0" oninput="gate()"></div>
+            <div class="fld"><label>On the plan?</label><div class="seg" id="g_plan"><button data-v="on" onclick="seg('g_plan',this)">On plan</button><button data-v="off" onclick="seg('g_plan',this)">Appeared today</button></div></div></div>
+        </div></div>
+
+        <div class="panel"><div class="p-head"><span class="t">Book &amp; timing</span></div><div class="p-body">
+          <div class="fld"><label>Level / trigger to enter <span class="opt">— what has to happen before you click</span></label><input type="text" id="g_level" placeholder="retest 102-08 · break 71.20 · NFP print" oninput="gate()"></div>
+          <div class="fld"><label>How long do you expect to need to hold it?</label><input type="text" id="g_hold" placeholder="20 min · 3 hrs · 2 days · into FOMC" oninput="gate()"></div>
+          <div class="fld"><label>Correlated to the book?</label><div class="seg" id="g_corr"><button data-v="no" onclick="seg('g_corr',this)">Independent</button><button data-v="part" onclick="seg('g_corr',this)">Partly</button><button data-v="yes" onclick="seg('g_corr',this)">Same bet</button></div></div>
+          <div class="fld"><label>Time window</label><div class="seg" id="g_mid"><button data-v="out" onclick="seg('g_mid',this)">Outside 11–13:30</button><button data-v="agrade" onclick="seg('g_mid',this)">Midday · A-grade</button><button data-v="block" onclick="seg('g_mid',this)">Midday · no plan</button></div><div class="flag red" id="g_midFlag"></div></div>
+        </div></div>
+
+        <div class="panel"><div class="p-head"><span class="t">Earn the size</span><span class="q">// strictest condition wins</span></div><div class="p-body">
+          <div class="fld"><label>Stage</label><div class="seg" id="g_tier"><button data-v="c" onclick="seg('g_tier',this)">Probe ¼</button><button data-v="b" onclick="seg('g_tier',this)">Medium ½</button><button data-v="a" onclick="seg('g_tier',this)">Max full</button></div><div class="computed" id="g_cap"></div></div>
+          <div class="fld"><label>MFE protection — how will you defend a winner? <span class="opt">(Rule 5.4)</span></label>
+            <div class="seg" id="g_mfe" style="flex-wrap:wrap">
+              <button data-v="Scratch stop once it confirms" onclick="seg('g_mfe',this)">Scratch on confirm</button>
+              <button data-v="Bank 1/3 at first target, stop to breakeven" onclick="seg('g_mfe',this)">Bank ⅓ + breakeven</button>
+              <button data-v="Trail: give back at most 1/3 of peak MFE" onclick="seg('g_mfe',this)">Cap giveback ⅓ peak</button>
+              <button data-v="Trail: give back at most 1/2 of peak MFE" onclick="seg('g_mfe',this)">Cap giveback ½ peak</button>
+              <button data-v="Trail the stop under each higher-low (longs) / above each lower-high (shorts), exiting only when structure breaks" onclick="seg('g_mfe',this)">Trail structure</button>
+              <button data-v="Catalyst passed and no move → flatten" onclick="seg('g_mfe',this)">Catalyst → flat</button>
+            </div>
+            <div class="hint" id="g_mfeDesc"></div></div>
+          <div class="fld"><label>Max dollar loss ($) <span class="opt">— your risk to the stop / invalidation</span></label><input type="number" id="g_maxloss" placeholder="solve contracts from this" oninput="gate()"></div>
+          <div class="fld"><label>$ risk per contract <span class="opt">— your outright risk to the invalidation</span></label><input type="number" id="g_riskper" placeholder="250" oninput="gate()"></div>
+          <div class="computed" id="g_size" style="font-size:13px;margin-top:5px"></div>
+        </div></div>
+      </div>
+
+      <div>
+        <div class="verdict red" id="g_verdict">
+          <div class="v-light"><div class="v-state" id="g_vState">INCOMPLETE</div><div class="v-sub" id="g_vSub">Work the gates</div></div>
+          <div class="v-reasons"><div class="rh">Gate status</div><ul id="g_reasons"></ul></div>
+        </div>
+        <div class="ticket"><div class="th">Assembled ticket</div><div id="ticketOut">Clear the gates to assemble a ticket.</div></div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn ghost" id="g_saveWatch" onclick="saveToWatch()">Save to watchlist</button>
+          <button class="btn" id="g_toJournal" onclick="gateToJournal()">Entered → journal</button>
+        </div>
+        <div class="hint">Checked a trade you won't enter yet? Save it to the watchlist — it waits there (with a delete) until your level hits, or you bin it.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WATCHLIST -->
+  <div class="view" id="v-watch">
+    <div class="vhead"><h2>Watchlist</h2><div class="sub">Gate-checked, not yet entered. Promote when your level hits — or delete it.</div></div>
+    <div id="watchList"></div>
+  </div>
+
+  <!-- JOURNAL -->
+  <div class="view" id="v-journal">
+    <div class="vhead"><h2>Journal</h2><div class="sub">Process over outcome. This is also what feeds your recovery math.</div></div>
+    <div class="stats" id="jrnStats"></div>
+    <div class="panel"><div class="p-head"><span class="t" id="jrnFormTitle">Log a trade</span><span class="q" id="jrnEditingId"></span></div><div class="p-body">
+      <div class="row3"><div class="fld"><label>Date</label><input type="date" id="j_date"></div>
+        <div class="fld"><label>Instrument</label><input type="text" id="j_inst" placeholder="ZT"></div>
+        <div class="fld"><label>Net P&amp;L ($)</label><input type="number" id="j_pnl" placeholder="-4200"></div></div>
+      <div class="row3">
+        <div class="fld"><label>Mode</label><div class="seg" id="j_mode"><button data-v="Position" onclick="seg('j_mode',this)">Position</button><button data-v="Tactical" onclick="seg('j_mode',this)">Tactical</button></div></div>
+        <div class="fld"><label>Direction</label><div class="seg" id="j_dir"><button data-v="Long" onclick="seg('j_dir',this)">Long</button><button data-v="Short" onclick="seg('j_dir',this)">Short</button></div></div>
+        <div class="fld"><label>Tier reached</label><div class="seg" id="j_tier"><button data-v="Probe" onclick="seg('j_tier',this)">Probe</button><button data-v="Medium" onclick="seg('j_tier',this)">Med</button><button data-v="Max" onclick="seg('j_tier',this)">Max</button></div></div>
+      </div>
+      <div class="row"><div class="fld"><label>Engine</label><div class="seg" id="j_eng"><button data-v="Catalyst" onclick="seg('j_eng',this)">Catalyst</button><button data-v="Fade" onclick="seg('j_eng',this)">Fade</button><button data-v="Data" onclick="seg('j_eng',this)">Data</button></div></div>
+        <div class="fld"><label>Linked thesis</label><select id="j_thesis"></select></div></div>
+      <div class="row3"><div class="fld"><label>Expected hold <span class="opt">— from the gate</span></label><input type="text" id="j_ehold" placeholder="2 days"></div>
+        <div class="fld"><label>Actual hold</label><input type="text" id="j_ahold" placeholder="6 hrs"></div>
+        <div class="fld"><label>R-multiple <span class="opt">— result in R</span></label><input type="number" id="j_rmult" step="0.1" placeholder="+1.8 / −1.0"></div></div>
+      <div class="row"><div class="fld"><label>Entry</label><input type="text" id="j_entry" placeholder="level / avg"></div>
+        <div class="fld"><label>Exit</label><input type="text" id="j_exit" placeholder="level / avg"></div></div>
+      <div class="row"><div class="fld"><label>Did you add? How?</label><div class="seg" id="j_adds"><button data-v="none" onclick="seg('j_adds',this)">No add</button><button data-v="momentum" onclick="seg('j_adds',this)">With momentum</button><button data-v="pullback" onclick="seg('j_adds',this)">On a higher pullback</button></div></div>
+        <div class="fld"><label>Did you reduce?</label><div class="seg" id="j_reduce"><button data-v="none" onclick="seg('j_reduce',this)">No</button><button data-v="strength" onclick="seg('j_reduce',this)">Trimmed into strength</button><button data-v="weakness" onclick="seg('j_reduce',this)">Cut on weakness</button></div></div></div>
+      <div class="row"><div class="fld"><label>Execution</label><div class="seg" id="j_exec"><button data-v="Ladders" onclick="seg('j_exec',this)">Ladders</button><button data-v="BBG" onclick="seg('j_exec',this)">BBG</button><button data-v="Citi" onclick="seg('j_exec',this)">Citi</button></div></div></div>
+      <div class="fld"><label>MFE protection — did you honor it?</label><div class="seg" id="j_mfehon"><button data-v="yes" onclick="seg('j_mfehon',this)">Honored</button><button data-v="no" onclick="seg('j_mfehon',this)">Let it round-trip</button><button data-v="na" onclick="seg('j_mfehon',this)">N/A</button></div></div>
+      <div class="fld" id="j_mfeUsedBox" style="display:none"><label>Which rule did you use?</label><select id="j_mfe">
+        <option value="">— pick —</option>
+        <option value="Scratch stop once it confirms">Scratch on confirm</option>
+        <option value="Bank 1/3 at first target, stop to breakeven">Bank ⅓ + breakeven</option>
+        <option value="Trail: give back at most 1/3 of peak MFE">Cap giveback ⅓ peak</option>
+        <option value="Trail: give back at most 1/2 of peak MFE">Cap giveback ½ peak</option>
+        <option value="Trail structure (under each higher-low / above each lower-high)">Trail structure</option>
+        <option value="Catalyst passed and no move → flatten">Catalyst → flat</option>
+      </select></div>
+      <div class="row"><div class="fld"><label>Did you follow process?</label><div class="seg" id="j_proc"><button data-v="followed" onclick="seg('j_proc',this)">Followed</button><button data-v="broke" onclick="seg('j_proc',this)">Broke a rule</button></div></div>
+        <div class="fld" id="j_brokeBox" style="display:none"><label>Which rules?</label><input type="text" id="j_broke" placeholder="5.2 added into adverse · 4.2 chased"></div></div>
+      <div class="fld"><label>What happened — and what to repeat or fix</label><textarea id="j_notes" placeholder="Execution, where MFE peaked, the lesson."></textarea></div>
+      <div class="btnrow"><button class="btn" onclick="saveTrade()">Save trade</button><button class="btn ghost" id="jrnCancel" onclick="resetTradeForm()" style="display:none">Cancel edit</button></div>
+    </div></div>
+    <div id="tradeList"></div>
+  </div>
+
+  <div class="foot">TRADING OS · v1 · single shared database · back up regularly with ⤓ Backup</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ PRODUCT MAP ============ */
+const PROD={CL:{p:'g',n:'CL — green. Full size with a setup; respect event/vol risk.'},ES:{p:'y',n:'ES — yellow. Defined setups only; intraday median negative.'},'USD/CAD':{p:'y',n:'USD/CAD — yellow. Tail-thin.'},'USD/MXN':{p:'y',n:'USD/MXN — yellow. Tail-thin.'},'USD/JPY':{p:'y',n:'USD/JPY — yellow, hold/EOD edge. Intraday is a loser.'},'EUR/USD':{p:'y',n:'FX — yellow.'},UB:{p:'y',n:'UB — yellow, hold/EOD edge.'},ZN:{p:'y',n:'ZN — yellow, hold/EOD edge.'},NKD:{p:'y',n:'NKD — yellow, hold edge but holds your best AND worst trade. Tail cap matters.'},GC:{p:'r',n:'GC — red intraday (hold ok). No chasing to fix a missed move.'},ZT:{p:'r',n:'ZT — red. Largest loss (−$190k), almost all longs. Warning only.'},HG:{p:'r',n:'HG/copper — red. No clean sample.'},BTC:{p:'r',n:'Crypto — red.'},ETH:{p:'r',n:'Crypto — red.'},MBT:{p:'r',n:'Crypto — red.'}};
+function lookupProd(raw){if(!raw)return null;const k=raw.trim().toUpperCase();if(PROD[k])return PROD[k];if(/BTC|ETH|CRYPTO|MBT|COIN/.test(k))return{p:'r',n:k+' — crypto, red.'};return{p:'y',n:k+' — unmapped: no data yet, treat with care.'};}
+
+/* ============ STORAGE ============ */
+const KEY='tradeos:db:v1';
+function defaultDB(){return{settings:{unitA:20000,dayLim:40000,wkLim:80000,monLim:160000},preps:{},theses:[],watchlist:[],journal:[],marks:{},marksFinal:{}};}
+let DB=defaultDB();
+async function loadDB(){
+  try{if(window.storage&&window.storage.get){const r=await window.storage.get(KEY);if(r&&r.value)return JSON.parse(r.value);}}catch(e){}
+  try{const ls=localStorage.getItem(KEY);if(ls)return JSON.parse(ls);}catch(e){}
+  return defaultDB();
+}
+async function saveDB(){const s=JSON.stringify(DB);try{if(window.storage&&window.storage.set){await window.storage.set(KEY,s);}}catch(e){}try{localStorage.setItem(KEY,s);}catch(e){}}
+function backup(){const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='trading-os-backup-'+todayStr()+'.json';a.click();toast('Backup downloaded');}
+function restore(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{DB=JSON.parse(r.result);saveDB();renderAll();toast('Restored');}catch(e){toast('Bad file');}};r.readAsText(f);}
+function wipeData(){if(!confirm('Erase ALL data in this browser — preps, theses, watchlist, journal, and daily marks? This cannot be undone. (Tip: hit Backup first if unsure.)'))return;DB=defaultDB();try{if(window.storage&&window.storage.delete)window.storage.delete(KEY);}catch(e){}try{localStorage.removeItem(KEY);}catch(e){}saveDB();gateWatchId=null;editingThesis=null;editingTrade=null;prepPos=[];allowedTrades=[];renderAll();go('today');toast('All data wiped — fresh start');}
+
+/* ============ HELPERS ============ */
+const $=id=>document.getElementById(id);
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmt(n){return Math.round(n).toLocaleString('en-US');}
+function rnd(n){return Math.round(n*100)/100;}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function num(id){const v=parseFloat($(id).value);return isNaN(v)?null:v;}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
+function mondayOf(d){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(0,0,0,0);return x;}
+function journalSum(dateStr){return DB.journal.filter(e=>e.date===dateStr&&e.pnl!=null&&!isNaN(e.pnl)).reduce((s,e)=>s+e.pnl,0);}
+// Account P&L = your daily marks ONLY. The mark already nets realized + the day's MTM change, so a position you've
+// been marking and then close is captured by that day's mark — the journal P&L is never re-summed, so no double-count.
+function dayValue(dateStr){const m=DB.marks&&DB.marks[dateStr];return(m!=null&&!isNaN(m))?m:0;}
+function rollingPnl(){const now=new Date();const t=todayStr();const wkStart=mondayOf(now);
+  let week=0,month=0;Object.keys(DB.marks||{}).forEach(ds=>{if(!ds)return;const d=new Date(ds+'T12:00:00');
+    if(d>=wkStart&&d<=now)week+=dayValue(ds);
+    if(d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear())month+=dayValue(ds);});
+  return{day:dayValue(t),week,month};}
+function recoveryState(){const p=rollingPnl();const s=DB.settings;const why=[];
+  if(p.day<=-10000)why.push('a −$'+fmt(Math.abs(p.day))+' day');
+  if(p.week<=-s.wkLim)why.push('the weekly limit');
+  if(p.month<=-s.monLim)why.push('the monthly limit');
+  return{active:why.length>0,why,p};}
+
+/* ============ SEG STATE ============ */
+const SEG={};
+function seg(group,btn){SEG[group]=btn.dataset.v;const c=btn.parentElement;c.querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));btn.classList.add('on');
+  const dgr=(group=='g_ready'&&btn.dataset.v=='off')||(group=='g_prep'&&btn.dataset.v=='no')||(group=='g_plan'&&btn.dataset.v=='off')||(group=='g_corr'&&btn.dataset.v=='yes')||(group=='g_dv'&&btn.dataset.v=='no')||(group=='g_mid'&&btn.dataset.v=='block')||(group=='j_proc'&&btn.dataset.v=='broke')||(group=='pp_state'&&btn.dataset.v=='C');
+  const gd=(group=='g_ready'&&btn.dataset.v=='clear')||(group=='g_corr'&&btn.dataset.v=='no')||(group=='g_dv'&&btn.dataset.v=='yes')||(group=='g_mid'&&btn.dataset.v=='out')||(group=='j_proc'&&btn.dataset.v=='followed');
+  if(dgr)btn.classList.add('danger');if(gd)btn.classList.add('good');
+  if(group=='g_mfe'&&$('g_mfeDesc'))$('g_mfeDesc').textContent=btn.dataset.v;
+  if(group=='j_proc')$('j_brokeBox').style.display=(btn.dataset.v=='broke')?'block':'none';
+  if(group=='j_mfehon')$('j_mfeUsedBox').style.display=(btn.dataset.v=='yes')?'block':'none';
+  if(group.startsWith('g_'))gate();}
+function segSet(group,val){const c=$(group);if(!c)return;SEG[group]=val;c.querySelectorAll('button').forEach(b=>{b.classList.remove('on','danger','good');if(b.dataset.v===val)b.click&&b.classList.add('on');});
+  const b=c.querySelector('button[data-v="'+val+'"]');if(b)b.click();}
+
+/* ============ NAV ============ */
+function go(v){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));$('v-'+v).classList.add('on');
+  if(v=='today')renderToday();if(v=='theses')renderTheses();if(v=='watch')renderWatch();if(v=='journal')renderJournal();if(v=='gate'){fillThesisSelects();gate();}if(v=='prep')loadPrepForToday();window.scrollTo(0,0);}
+
+/* ============ TODAY ============ */
+function renderToday(){
+  const rec=recoveryState();const rb=$('recBar');
+  if(rec.active){rb.classList.add('show');$('recText').textContent='Triggered by '+rec.why.join(' + ')+'. 0.25× cap, no new overnight unless written, adds only to cut risk. Graduate on clean process, not a green day.';}else rb.classList.remove('show');
+  const p=rec.p;
+  const tm=DB.marks&&DB.marks[todayStr()];if($('todayMark'))$('todayMark').value=(tm!=null&&!isNaN(tm))?tm:'';
+  if($('markHint'))$('markHint').innerHTML='This ledger is your <b>account P&L</b> — drives recovery and the limits. Enter your firm\'s official daily figure (it already nets realized + the day\'s change in open-position marks), so a position you mark daily and then close is counted once, here, never double-counted against the journal. The journal\'s P&L is just each trade\'s own record.';
+  renderMarksLedger();
+  $('todayTitle').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const adh=processAdherence();
+  $('todayStats').innerHTML=
+    statCard('Day P&L',p.day,true)+statCard('Week P&L',p.week,true)+statCard('Month P&L',p.month,true)+
+    statBox('Open theses',DB.theses.filter(t=>t.status=='active').length,'')+
+    statBox('Watchlist',DB.watchlist.length,'pending')+
+    statBox('Process',adh.pct+'%',adh.n+' logged');
+  const prep=DB.preps[todayStr()];
+  $('prepStatus').innerHTML=prep?'<span style="color:var(--green)">done</span>':'<span style="color:var(--red)">not yet</span>';
+  $('todayPrep').innerHTML=prep?prepSummary(prep):'<div class="empty">No prep for today yet. <a href="#" onclick="go(\'prep\');return false" style="color:var(--gold)">Write it →</a></div>';
+  const tt=DB.theses.filter(t=>t.status!='closed').sort((a,b)=>(a.conviction||'C').localeCompare(b.conviction||'C')).slice(0,4);
+  $('todayTheses').innerHTML=tt.length?tt.map(t=>`<div onclick="editThesis('${t.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer"><div><span class="chip ${t.conviction}">${t.conviction||'?'}</span> ${esc(t.title)}</div><span class="lc-meta">${esc(t.products||'')}${t.products&&t.direction?' · ':''}${esc(t.direction||'')}</span></div>`).join(''):'<div class="empty">No theses yet.</div>';
+  $('todayWatch').innerHTML=DB.watchlist.length?DB.watchlist.slice(0,4).map(w=>`<div onclick="go('watch')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer"><div>${esc(w.inst||'—')} <span class="lc-meta">${esc(w.dir||'')}</span>${w.level?`<span class="lc-meta" style="color:var(--gold)"> ▸ ${esc(w.level)}</span>`:''}</div><span class="lc-meta">${ageStr(w.savedAt)}</span></div>`).join(''):'<div class="empty">Nothing waiting.</div>';
+}
+function statCard(k,v,pnl){const cls=pnl?(v>0?'pos':(v<0?'neg':'')):'';return`<div class="stat"><div class="k">${k}</div><div class="v ${cls}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</div></div>`;}
+function statBox(k,v,d){return`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;}
+function prepSummary(p){const pos=(p.positions&&p.positions.length)?p.positions.map(x=>`${esc(x.inst)} ${esc(x.dir||'')}${x.size?' ('+esc(x.size)+')':''}`).join(' · '):'flat';const plan=(p.allowedTrades&&p.allowedTrades.length)?p.allowedTrades.map(a=>`${esc(a.inst)} ${esc(a.dir||'')}${a.level?' @ '+esc(a.level):''}`).join(' · '):'—';return`<div class="lc-body"><b style="color:var(--text)">Narrative:</b> ${esc(p.narr||'—')}<br><b style="color:var(--text)">On the book:</b> ${pos}<br><b style="color:var(--text)">Plan:</b> ${plan}</div>`;}
+function ageStr(ts){const d=Math.floor((Date.now()-ts)/86400000);return d<=0?'today':d+'d ago';}
+function processAdherence(){const j=DB.journal.filter(t=>t.process);if(!j.length)return{pct:'—',n:0};const f=j.filter(t=>t.process=='followed').length;return{pct:Math.round(f/j.length*100),n:j.length};}
+function saveTodayMark(){const v=num('todayMark');if(!DB.marks)DB.marks={};if(v==null)delete DB.marks[todayStr()];else DB.marks[todayStr()]=v;saveDB();renderToday();toast('Mark updated');}
+function renderMarksLedger(){const el=$('marksLedger');if(!el)return;const dates=Object.keys(DB.marks||{}).sort().reverse().slice(0,10);
+  if(!dates.length){el.innerHTML='';return;}
+  el.innerHTML='<div class="lc-meta" style="margin-bottom:7px">Recent daily marks — edit any day to reconcile, mark Final once the official number is in.</div>'+
+    dates.map(d=>{const v=DB.marks[d];const fin=DB.marksFinal&&DB.marksFinal[d];const pos=v>0;
+    return`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">
+      <span class="lc-meta" style="width:88px">${d}</span>
+      <input type="number" value="${v}" oninput="editMark('${d}',this.value)" style="width:120px;padding:5px 8px;font-size:13px">
+      <span class="chip ${pos?'g':'r'}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</span>
+      <button class="btn ${fin?'':'ghost'} sm" style="margin-left:auto" onclick="toggleMarkFinal('${d}')">${fin?'✓ Final':'Provisional'}</button>
+      <button class="btn ghost sm" onclick="deleteMark('${d}')">✕</button></div>`;}).join('');}
+function editMark(d,val){const v=parseFloat(val);if(isNaN(v))return;DB.marks[d]=v;saveDB();/* live-update stats without full re-render to keep focus */const r=recoveryState();}
+function toggleMarkFinal(d){if(!DB.marksFinal)DB.marksFinal={};DB.marksFinal[d]=!DB.marksFinal[d];saveDB();renderToday();}
+function deleteMark(d){delete DB.marks[d];if(DB.marksFinal)delete DB.marksFinal[d];saveDB();renderToday();toast('Mark removed');}
+
+/* ============ PREP ============ */
+let prepPos=[];let allowedTrades=[];
+function renderPrepPos(){const el=$('pp_posList');if(!el)return;
+  if(!prepPos.length){el.innerHTML='<div class="hint">No positions on. Flat is a position too — add one only if you\'re holding risk overnight.</div>';return;}
+  el.innerHTML=prepPos.map((p,i)=>`<div class="lc" style="margin-bottom:8px;padding:12px 13px">
+    <div class="row3"><div class="fld" style="margin-bottom:8px"><label>Instrument</label><input type="text" value="${esc(p.inst||'')}" oninput="updPrepPos(${i},'inst',this.value)" placeholder="NKD"></div>
+      <div class="fld" style="margin-bottom:8px"><label>Direction</label><input type="text" value="${esc(p.dir||'')}" oninput="updPrepPos(${i},'dir',this.value)" placeholder="Long"></div>
+      <div class="fld" style="margin-bottom:8px"><label>Size</label><input type="text" value="${esc(p.size||'')}" oninput="updPrepPos(${i},'size',this.value)" placeholder="40 lots / $12k risk"></div></div>
+    <div class="fld" style="margin-bottom:8px"><label>Why I'm holding it</label><input type="text" value="${esc(p.why||'')}" oninput="updPrepPos(${i},'why',this.value)" placeholder="thesis + where it is in the move"></div>
+    <div class="row"><div class="fld" style="margin-bottom:0"><label>Add conditions</label><input type="text" value="${esc(p.adds||'')}" oninput="updPrepPos(${i},'adds',this.value)" placeholder="what must happen before I add"></div>
+      <div class="fld" style="margin-bottom:0"><label>Invalidation / exit</label><input type="text" value="${esc(p.inval||'')}" oninput="updPrepPos(${i},'inval',this.value)" placeholder="where I'm wrong / cut"></div></div>
+    <div style="text-align:right;margin-top:8px"><button class="btn danger sm" onclick="rmPrepPos(${i})">Remove</button></div></div>`).join('');}
+function addPrepPos(){prepPos.push({inst:'',dir:'',size:'',why:'',adds:'',inval:''});renderPrepPos();}
+function updPrepPos(i,k,v){prepPos[i][k]=v;}
+function rmPrepPos(i){prepPos.splice(i,1);renderPrepPos();}
+function renderAllowed(){const el=$('pp_allowedList');if(!el)return;
+  if(!allowedTrades.length){el.innerHTML='<div class="hint">No planned trades yet. Keep it to your best two or three.</div>';return;}
+  el.innerHTML=allowedTrades.map((a,i)=>`<div class="lc" style="margin-bottom:8px;padding:12px 13px">
+    <div class="row3"><div class="fld" style="margin-bottom:8px"><label>Product</label><input type="text" value="${esc(a.inst||'')}" oninput="updAllowed(${i},'inst',this.value)" placeholder="CL"></div>
+      <div class="fld" style="margin-bottom:8px"><label>Direction</label><input type="text" value="${esc(a.dir||'')}" oninput="updAllowed(${i},'dir',this.value)" placeholder="Short"></div>
+      <div class="fld" style="margin-bottom:8px"><label>Level / trigger</label><input type="text" value="${esc(a.level||'')}" oninput="updAllowed(${i},'level',this.value)" placeholder="fade 71.50 / break 70"></div></div>
+    <div class="fld" style="margin-bottom:8px"><label>Thesis / why</label><input type="text" value="${esc(a.why||'')}" oninput="updAllowed(${i},'why',this.value)" placeholder="the read behind the trade"></div>
+    <div class="row3"><div class="fld" style="margin-bottom:0"><label>Stop</label><input type="text" value="${esc(a.stop||'')}" oninput="updAllowed(${i},'stop',this.value)" placeholder="72.20"></div>
+      <div class="fld" style="margin-bottom:0"><label>Size</label><input type="text" value="${esc(a.size||'')}" oninput="updAllowed(${i},'size',this.value)" placeholder="probe / $5k"></div>
+      <div class="fld" style="margin-bottom:0"><label>Expected hold</label><input type="text" value="${esc(a.hold||'')}" oninput="updAllowed(${i},'hold',this.value)" placeholder="intraday / 2d"></div></div>
+    <div style="text-align:right;margin-top:8px"><button class="btn danger sm" onclick="rmAllowed(${i})">Remove</button></div></div>`).join('');}
+function addAllowed(){allowedTrades.push({inst:'',dir:'',level:'',stop:'',size:'',hold:'',why:''});renderAllowed();}
+function updAllowed(i,k,v){allowedTrades[i][k]=v;}
+function rmAllowed(i){allowedTrades.splice(i,1);renderAllowed();}
+function loadPrepForToday(){if(!$('pp_date').value)$('pp_date').value=todayStr();const p=DB.preps[$('pp_date').value];
+  if(p){$('pp_market').value=p.market||'';$('pp_narr').value=p.narr||'';$('pp_cal').value=p.cal||'';$('pp_dis').value=p.dis||'';$('pp_summary').value=p.summary||'';if(p.state)segSet('pp_state',p.state);prepPos=Array.isArray(p.positions)?JSON.parse(JSON.stringify(p.positions)):[];allowedTrades=Array.isArray(p.allowedTrades)?JSON.parse(JSON.stringify(p.allowedTrades)):[];}
+  else{['pp_market','pp_narr','pp_cal','pp_dis','pp_summary'].forEach(i=>$(i).value='');prepPos=[];allowedTrades=[];}
+  renderPrepPos();renderAllowed();}
+function savePrep(){const date=$('pp_date').value||todayStr();
+  DB.preps[date]={date,state:SEG.pp_state||'',market:$('pp_market').value,narr:$('pp_narr').value,cal:$('pp_cal').value,dis:$('pp_dis').value,summary:$('pp_summary').value,positions:prepPos.filter(p=>p.inst),allowedTrades:allowedTrades.filter(a=>a.inst)};saveDB();toast('Prep saved');renderBadges();}
+function buildPrepText(){savePrep();const p=DB.preps[$('pp_date').value||todayStr()];
+  const posTxt=(p.positions&&p.positions.length)?p.positions.map(x=>`• ${x.inst} ${x.dir} ${x.size?'('+x.size+')':''} — ${x.why||''}${x.adds?' | add if '+x.adds:''}${x.inval?' | wrong if '+x.inval:''}`).join('\n'):'flat';
+  const planTxt=(p.allowedTrades&&p.allowedTrades.length)?p.allowedTrades.map(a=>`• ${a.inst} ${a.dir} ${a.size?'('+a.size+')':''} if ${a.level||'—'} | stop ${a.stop||'—'} | exp hold ${a.hold||'—'}${a.why?' — '+a.why:''}`).join('\n'):'—';
+  const summary=p.summary?`\n\nWhat I'm thinking:\n${p.summary}`:'';
+  const txt=`MORNING PREP — ${p.date}\n\nMarket state: ${p.market||'—'}\nTop narrative: ${p.narr||'—'}\nCalendar/catalysts: ${p.cal||'—'}\n\nPositions on:\n${posTxt}\n\nToday's plan:\n${planTxt}\n\nNot touching: ${p.dis||'—'}${summary}`;
+  $('pp_copy').textContent=txt;$('pp_out').style.display='block';}
+function copyPrep(){navigator.clipboard.writeText($('pp_copy').textContent).then(()=>toast('Copied'));}
+
+/* ============ THESES ============ */
+let editingThesis=null;
+function saveThesis(){const t={id:editingThesis||uid(),title:$('th_title').value.trim(),products:$('th_products').value.trim(),conviction:SEG.th_conv||'C',direction:SEG.th_dir||'',status:SEG.th_status||'active',narr:$('th_narr').value.trim(),cat:$('th_cat').value.trim(),inval:$('th_inval').value.trim(),updated:Date.now()};
+  if(!t.title){toast('Needs a title');return;}
+  if(editingThesis){const i=DB.theses.findIndex(x=>x.id==editingThesis);t.created=DB.theses[i].created;DB.theses[i]=t;}else{t.created=Date.now();DB.theses.unshift(t);}
+  saveDB();resetThesisForm();renderTheses();renderBadges();toast('Thesis saved');}
+function editThesis(id){const t=DB.theses.find(x=>x.id==id);if(!t)return;go('theses');editingThesis=id;$('thesisFormTitle').textContent='Edit thesis';$('thesisEditingId').textContent='editing';$('thesisCancel').style.display='inline-block';
+  $('th_title').value=t.title;$('th_products').value=t.products||'';$('th_narr').value=t.narr||'';$('th_cat').value=t.cat||'';$('th_inval').value=t.inval||'';segSet('th_conv',t.conviction);segSet('th_dir',t.direction);segSet('th_status',t.status);window.scrollTo(0,0);}
+function resetThesisForm(){editingThesis=null;['th_title','th_products','th_narr','th_cat','th_inval'].forEach(i=>$(i).value='');['th_conv','th_dir','th_status'].forEach(g=>{$(g).querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});$('thesisFormTitle').textContent='New thesis';$('thesisEditingId').textContent='';$('thesisCancel').style.display='none';}
+function deleteThesis(id){if(!confirm('Delete this thesis?'))return;DB.theses=DB.theses.filter(x=>x.id!=id);saveDB();renderTheses();renderBadges();toast('Deleted');}
+function thesisPnl(id){return DB.journal.filter(t=>t.thesisId==id&&t.pnl!=null).reduce((s,t)=>s+t.pnl,0);}
+function renderTheses(){const el=$('thesisList');if(!DB.theses.length){el.innerHTML='<div class="empty">No theses yet. Add your first above.</div>';return;}
+  el.innerHTML=DB.theses.map(t=>{const pnl=thesisPnl(t.id);const n=DB.journal.filter(x=>x.thesisId==t.id).length;
+    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(t.title)}</div><div class="lc-meta"><span class="chip ${t.conviction}">${t.conviction}</span><span class="chip">${esc(t.direction||'—')}</span><span class="chip ${t.status=='active'?'g':(t.status=='watch'?'y':'')}">${t.status}</span>${esc(t.products||'')}</div></div><div style="text-align:right"><div class="lc-meta"><span class="chip ${pnl>0?'pnlpos':(pnl<0?'pnlneg':'')}">${pnl<0?'−$':'$'}${fmt(Math.abs(pnl))}</span></div><div class="lc-meta" style="margin-top:4px">${n} trade${n==1?'':'s'}</div></div></div>
+    <div class="lc-body">${esc(t.narr||'')}</div>
+    ${t.inval?`<div class="lc-meta">✕ wrong if: ${esc(t.inval)}</div>`:''}
+    <div class="lc-actions"><button class="btn ghost sm" onclick="editThesis('${t.id}')">Edit</button><button class="btn ghost sm" onclick="gateFromThesis('${t.id}')">Check in gate</button><button class="btn danger sm" onclick="deleteThesis('${t.id}')">Delete</button></div></div>`;}).join('');}
+
+/* ============ GATE ============ */
+function fillThesisSelects(){const opts='<option value="">— none —</option>'+DB.theses.filter(t=>t.status!='closed').map(t=>`<option value="${t.id}">${esc(t.title)} (${t.conviction})</option>`).join('');$('g_thesis').innerHTML=opts;$('j_thesis').innerHTML=opts;}
+function linkThesis(){const id=$('g_thesis').value;if(!id)return;const t=DB.theses.find(x=>x.id==id);if(!t)return;$('g_inst').value=(t.products||'').split(',')[0].trim();$('g_thtext').value=t.narr||'';$('g_inval').value=t.inval||'';if(t.direction=='Long')segSet('g_dir','long');if(t.direction=='Short')segSet('g_dir','short');segSet('g_prep','yes');gate();}
+function gateFromThesis(id){gateWatchId=null;go('gate');setTimeout(()=>{$('g_thesis').value=id;linkThesis();},60);}
+function gate(){
+  const overnight=(SEG.g_mode=='pos');
+  $('g_modeHint').textContent=SEG.g_mode=='pos'?'Position: 0.5×→1.0×, full only after proof.':SEG.g_mode=='tac'?'Tactical: 0.25×→0.5×. No overnight by default.':'';
+  // pnl + recovery from journal
+  const rec=recoveryState();const p=rec.p;
+  $('gatePnl').innerHTML=pnlChip('Day',p.day)+pnlChip('Week',p.week)+pnlChip('Month',p.month);
+  const reasons=[];let red=false,amber=false;const todo=[];
+  if(rec.active){amber=true;reasons.push({c:'warn',t:'Recovery active (auto) — 0.25× cap'});}
+  const s=DB.settings;
+  if(p.day<=-s.dayLim){red=true;reasons.push({c:'fail',t:'Daily limit hit — flat and done'});}
+  if(p.week<=-s.wkLim){red=true;reasons.push({c:'fail',t:'Weekly limit hit'});}
+  if(!SEG.g_ready)todo.push('Readiness check');else if(SEG.g_ready=='off'){amber=true;reasons.push({c:'warn',t:'Off / risk-down: half size, no adds, no new product'});}else reasons.push({c:'ok',t:'Clear-headed'});
+  if(!SEG.g_mode)todo.push('Declare the mode');else reasons.push({c:'ok',t:'Mode: '+(SEG.g_mode=='pos'?'Position':'Tactical')});
+  const prod=lookupProd($('g_inst').value);const pb=$('g_perm');
+  if(prod){pb.className='permbox show '+prod.p;pb.innerHTML=prod.n+(prod.p=='r'?'<span class="wo">Warning only — size not capped here. Your call.</span>':'');if(prod.p=='r'){amber=true;reasons.push({c:'warn',t:'Red product (warning only): '+$('g_inst').value.trim().toUpperCase()});}}else pb.className='permbox';
+  if(!SEG.g_dir)todo.push('Direction');if(!SEG.g_eng)todo.push('Engine');
+  if(!SEG.g_prep)todo.push('Written-thesis state');else if(SEG.g_prep=='no'){amber=true;reasons.push({c:'warn',t:'No written thesis — capped'});}else if(SEG.g_prep=='thin'){amber=true;reasons.push({c:'warn',t:'"chance" prep — capped'});}else reasons.push({c:'ok',t:'Written thesis present'});
+  if(!$('g_thtext').value.trim())todo.push('One-sentence thesis');
+  if(!$('g_inval').value.trim())todo.push('Written invalidation');
+  const rr=num('g_rr');if(rr===null)todo.push('R:R');else if(rr<2){amber=true;reasons.push({c:'warn',t:'R:R '+rr+' below 2:1'});}else reasons.push({c:'ok',t:'Asymmetry '+rr+':1'});
+  if(!SEG.g_plan)todo.push('On-plan?');else if(SEG.g_plan=='off'){amber=true;reasons.push({c:'warn',t:'Off-plan — half size + justification'});}
+  if(!$('g_hold').value.trim())todo.push('Expected hold time');else reasons.push({c:'ok',t:'Hold: '+$('g_hold').value.trim()});
+  if(SEG.g_corr=='yes'){amber=true;reasons.push({c:'warn',t:'Correlated — size as an add, not new risk'});}else if(!SEG.g_corr)todo.push('Correlation');
+  let mdN='';if(SEG.g_mid=='block'){red=true;mdN='Midday 11:00–13:30, no A-grade plan. Go work out.';reasons.push({c:'fail',t:'Midday block — no exception'});}else if(SEG.g_mid=='agrade'){amber=true;reasons.push({c:'warn',t:'Midday A-grade — quarter-to-half'});}else if(!SEG.g_mid)todo.push('Time window');
+  flagEl('g_midFlag',mdN);
+  if(!SEG.g_mfe)todo.push('MFE protection');else reasons.push({c:'ok',t:'MFE: '+SEG.g_mfe});
+  // SIZE — pick a stage, then reducing conditions shave it down (they stack), recovery is a hard 0.25x ceiling
+  const unitA=s.unitA;const stageBase={c:.25,b:.5,a:1};const reductions=[];
+  if(SEG.g_mode=='tac')reductions.push(['tactical',.5]);
+  if(SEG.g_ready=='off')reductions.push(['off',.75]);
+  if(SEG.g_plan=='off')reductions.push(['off-plan',.75]);
+  if(SEG.g_mid=='agrade')reductions.push(['midday',.5]);
+  if(SEG.g_prep=='thin')reductions.push(['thin prep',.75]);
+  if(SEG.g_prep=='no')reductions.push(['no thesis',.5]);
+  let factor=1;reductions.forEach(r=>factor*=r[1]);
+  let effCap=null;
+  if(SEG.g_tier){let mult=stageBase[SEG.g_tier]*factor;if(rec.active)mult=Math.min(mult,.25);effCap=unitA*mult;
+    const stageName={a:'Max',b:'Medium',c:'Probe'}[SEG.g_tier];
+    let note=stageName+(reductions.length?' reduced by '+reductions.map(r=>r[0]).join(' · '):'');if(rec.active)note+=' · recovery ≤0.25×';
+    $('g_cap').innerHTML='Ceiling: <b>$'+fmt(effCap)+'</b> ('+(mult).toFixed(2).replace(/0$/,'')+'×) — '+note;}
+  else{$('g_cap').textContent='';todo.push('Pick a stage');}
+  let riskPer=num('g_riskper');
+  const maxLoss=num('g_maxloss');
+  if(maxLoss!==null&&riskPer&&riskPer>0){const ct=Math.floor(maxLoss/riskPer);let m='Size: <b>'+ct+' contracts</b> ($'+fmt(maxLoss)+' ÷ $'+fmt(rnd(riskPer))+')';if(effCap!==null&&maxLoss>effCap){amber=true;m+='<br><span style="color:var(--gold)">⚠ exceeds ceiling $'+fmt(effCap)+' — cut to '+Math.floor(effCap/riskPer)+'.</span>';reasons.push({c:'warn',t:'Risk exceeds ceiling'});}else if(effCap!==null)reasons.push({c:'ok',t:'Size within ceiling'});$('g_size').innerHTML=m;}else{$('g_size').textContent='';if(SEG.g_tier)todo.push('Max loss + risk/ct');}
+  // verdict
+  todo.forEach(t=>reasons.push({c:'todo',t}));
+  const v=$('g_verdict');v.className='verdict '+(red||todo.length?'red':(amber?'amber':'green'));
+  if(red){$('g_vState').textContent='NO TRADE';$('g_vSub').textContent=reasons.some(r=>r.c=='fail')?'A rule blocks this':'Incomplete';}
+  else if(todo.length){$('g_vState').textContent='INCOMPLETE';$('g_vSub').textContent='Work the gates';}
+  else if(amber){$('g_vState').textContent='CONDITIONAL';$('g_vSub').textContent=rec.active?'Recovery — small and clean':'Cleared with cautions';}
+  else{$('g_vState').textContent='CLEARED';$('g_vSub').textContent='Green light';}
+  const ul=$('g_reasons');ul.innerHTML='';reasons.forEach(r=>{const li=document.createElement('li');li.className=r.c;li.innerHTML=r.t;ul.appendChild(li);});
+  buildTicket(red,amber,todo.length,{prod,effCap,maxLoss,riskPer,rec});
+  // gate trade entry permission
+  const blocked=red||todo.length;
+  $('g_toJournal').disabled=blocked;$('g_toJournal').style.opacity=blocked?.5:1;
+  $('g_saveWatch').disabled=todo.length>4;$('g_saveWatch').style.opacity=(todo.length>4)?.5:1;
+}
+function pnlChip(k,v){const cls=v>0?'pos':(v<0?'neg':'');return`<div class="pc"><div class="pk">${k}</div><div class="pv ${cls}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</div></div>`;}
+function flagEl(id,m){const e=$(id);if(m){e.textContent=m;e.className='flag red show';}else e.className='flag red';}
+function buildTicket(red,amber,todo,d){if(todo||red){$('ticketOut').textContent=red&&!todo?'⛔ Blocked by a rule — no ticket.':'Clear the gates to assemble a ticket.';return;}
+  const ct=(d.maxLoss&&d.riskPer)?Math.floor(d.maxLoss/d.riskPer):'—';const mode=d.rec.active?'Recovery (auto)':(SEG.g_mode=='pos'?'Position':'Tactical');
+  $('ticketOut').textContent=`VERDICT   ${amber?'CONDITIONAL':'CLEARED'}\nMODE      ${mode}\nPRODUCT   ${$('g_inst').value||'—'} (${d.prod?d.prod.p.toUpperCase():'?'}) · ${SEG.g_dir||'—'}\nHOLD      ${$('g_hold').value||'—'}\nTHESIS    ${$('g_thtext').value||'—'}\nWRONG IF  ${$('g_inval').value||'—'}\nTRIGGER   ${$('g_level').value||'—'}\nCEILING   $${d.effCap!=null?fmt(d.effCap):'—'}\nMAX LOSS  $${d.maxLoss!=null?fmt(d.maxLoss):'—'}\nSIZE      ${ct} contracts`;}
+function gateSnapshot(){return{inst:$('g_inst').value,dir:SEG.g_dir||'',mode:SEG.g_mode||'',eng:SEG.g_eng||'',thesisId:$('g_thesis').value||'',thtext:$('g_thtext').value,inval:$('g_inval').value,level:$('g_level').value,hold:$('g_hold').value,mfe:SEG.g_mfe||'',maxloss:num('g_maxloss'),rr:num('g_rr'),tier:SEG.g_tier||''};}
+let gateWatchId=null;
+function clearGate(){['g_inst','g_thtext','g_inval','g_level','g_rr','g_hold','g_maxloss','g_riskper'].forEach(i=>{if($(i))$(i).value='';});
+  ['g_ready','g_mode','g_dir','g_eng','g_prep','g_plan','g_corr','g_mid','g_tier','g_mfe'].forEach(g=>{const c=$(g);if(c)c.querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});
+  if($('g_thesis'))$('g_thesis').value='';if($('g_mfeDesc'))$('g_mfeDesc').textContent='';gateWatchId=null;gate();}
+function saveToWatch(){const snap=gateSnapshot();if(!snap.inst){toast('Add an instrument first');return;}
+  if(gateWatchId){const i=DB.watchlist.findIndex(w=>w.id==gateWatchId);if(i>-1){snap.id=gateWatchId;snap.savedAt=DB.watchlist[i].savedAt;DB.watchlist[i]=snap;saveDB();renderBadges();clearGate();toast('Watchlist item updated');return;}}
+  snap.id=uid();snap.savedAt=Date.now();DB.watchlist.unshift(snap);saveDB();renderBadges();clearGate();toast('Saved to watchlist');}
+function gateToJournal(){const snap=gateSnapshot();prefillTradeFromSnap(snap);if(gateWatchId){DB.watchlist=DB.watchlist.filter(w=>w.id!=gateWatchId);saveDB();renderBadges();}clearGate();go('journal');toast('Fill P&L and save');}
+
+/* ============ WATCHLIST ============ */
+function renderWatch(){const el=$('watchList');if(!DB.watchlist.length){el.innerHTML='<div class="empty">Nothing waiting. Check a trade in the Gate and "Save to watchlist".</div>';return;}
+  el.innerHTML=DB.watchlist.map(w=>{const th=DB.theses.find(t=>t.id==w.thesisId);
+    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta"><span class="chip teal">${w.mode=='pos'?'Position':(w.mode=='tac'?'Tactical':'—')}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>${ageStr(w.savedAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
+    ${w.level?`<div class="lc-meta" style="color:var(--gold)">▸ trigger: ${esc(w.level)}</div>`:''}
+    <div class="lc-body">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">✕ wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
+    <div class="lc-actions"><button class="btn sm" onclick="watchToJournal('${w.id}')">Entered → journal</button><button class="btn ghost sm" onclick="watchToPlan('${w.id}')">→ Today's plan</button><button class="btn ghost sm" onclick="watchToGate('${w.id}')">Re-check</button><button class="btn danger sm" onclick="deleteWatch('${w.id}')">Delete</button></div></div>`;}).join('');}
+function watchToPlan(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;const d=todayStr();if(!DB.preps[d])DB.preps[d]={date:d,positions:[],allowedTrades:[]};if(!Array.isArray(DB.preps[d].allowedTrades))DB.preps[d].allowedTrades=[];
+  const th=DB.theses.find(t=>t.id==w.thesisId);
+  DB.preps[d].allowedTrades.push({inst:w.inst||'',dir:w.dir||'',level:w.level||'',stop:w.inval||'',size:({a:'Max',b:'Medium',c:'Probe'}[w.tier]||''),hold:w.hold||'',why:(th?th.title:'')||w.thtext||''});
+  saveDB();toast('Added to today\'s plan');go('prep');}
+function deleteWatch(id){DB.watchlist=DB.watchlist.filter(w=>w.id!=id);saveDB();renderWatch();renderBadges();toast('Removed');}
+function watchToJournal(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;prefillTradeFromSnap(w);DB.watchlist=DB.watchlist.filter(x=>x.id!=id);saveDB();renderBadges();go('journal');toast('Promoted — fill P&L and save');}
+function watchToGate(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;gateWatchId=id;go('gate');setTimeout(()=>{$('g_inst').value=w.inst||'';$('g_thtext').value=w.thtext||'';$('g_inval').value=w.inval||'';$('g_level').value=w.level||'';$('g_hold').value=w.hold||'';if(w.mfe)segSet('g_mfe',w.mfe);if(w.maxloss)$('g_maxloss').value=w.maxloss;if(w.rr)$('g_rr').value=w.rr;if(w.dir)segSet('g_dir',w.dir);if(w.mode)segSet('g_mode',w.mode);if(w.eng)segSet('g_eng',w.eng);if(w.tier)segSet('g_tier',w.tier);if(w.thesisId)$('g_thesis').value=w.thesisId;gate();},60);}
+
+/* ============ JOURNAL ============ */
+let editingTrade=null;
+function prefillTradeFromSnap(snap){resetTradeForm();$('j_date').value=todayStr();$('j_inst').value=snap.inst||'';$('j_ehold').value=snap.hold||'';$('j_mfe').value=snap.mfe||'';if(snap.dir)segSet('j_dir',snap.dir.charAt(0).toUpperCase()+snap.dir.slice(1));if(snap.mode=='pos')segSet('j_mode','Position');if(snap.mode=='tac')segSet('j_mode','Tactical');if(snap.eng)segSet('j_eng',snap.eng.charAt(0).toUpperCase()+snap.eng.slice(1));if(snap.tier)segSet('j_tier',{a:'Max',b:'Medium',c:'Probe'}[snap.tier]||'');if(snap.rr!=null)$('j_rmult').value='';setTimeout(()=>{fillThesisSelects();if(snap.thesisId)$('j_thesis').value=snap.thesisId;},30);}
+function saveTrade(){const t={id:editingTrade||uid(),date:$('j_date').value||todayStr(),instrument:$('j_inst').value.trim(),pnl:num('j_pnl'),mode:SEG.j_mode||'',direction:SEG.j_dir||'',tier:SEG.j_tier||'',engine:SEG.j_eng||'',exec:SEG.j_exec||'',thesisId:$('j_thesis').value||'',ehold:$('j_ehold').value.trim(),ahold:$('j_ahold').value.trim(),rmult:num('j_rmult'),entry:$('j_entry').value.trim(),exit:$('j_exit').value.trim(),adds:SEG.j_adds||'',reduce:SEG.j_reduce||'',mfe:$('j_mfe').value,mfehon:SEG.j_mfehon||'',process:SEG.j_proc||'',broke:$('j_broke').value.trim(),notes:$('j_notes').value.trim()};
+  if(!t.instrument){toast('Needs an instrument');return;}
+  if(editingTrade){const i=DB.journal.findIndex(x=>x.id==editingTrade);DB.journal[i]=t;}else DB.journal.unshift(t);
+  saveDB();resetTradeForm();renderJournal();renderBadges();renderToday();toast('Trade saved');}
+function editTrade(id){const t=DB.journal.find(x=>x.id==id);if(!t)return;editingTrade=id;$('jrnFormTitle').textContent='Edit trade';$('jrnEditingId').textContent='editing';$('jrnCancel').style.display='inline-block';
+  $('j_date').value=t.date;$('j_inst').value=t.instrument;$('j_pnl').value=t.pnl;$('j_ehold').value=t.ehold||'';$('j_ahold').value=t.ahold||'';$('j_rmult').value=t.rmult!=null?t.rmult:'';$('j_entry').value=t.entry||'';$('j_exit').value=t.exit||'';$('j_mfe').value=t.mfe||'';$('j_broke').value=t.broke||'';$('j_notes').value=t.notes||'';fillThesisSelects();$('j_thesis').value=t.thesisId||'';
+  if(t.mode)segSet('j_mode',t.mode);if(t.direction)segSet('j_dir',t.direction);if(t.tier)segSet('j_tier',t.tier);if(t.engine)segSet('j_eng',t.engine);if(t.exec)segSet('j_exec',t.exec);if(t.adds)segSet('j_adds',t.adds);if(t.reduce)segSet('j_reduce',t.reduce);if(t.mfehon)segSet('j_mfehon',t.mfehon);if(t.process)segSet('j_proc',t.process);$('j_brokeBox').style.display=t.process=='broke'?'block':'none';$('j_mfeUsedBox').style.display=t.mfehon=='yes'?'block':'none';window.scrollTo(0,0);}
+function resetTradeForm(){editingTrade=null;['j_inst','j_pnl','j_ehold','j_ahold','j_rmult','j_entry','j_exit','j_mfe','j_broke','j_notes'].forEach(i=>$(i).value='');['j_mode','j_dir','j_tier','j_eng','j_exec','j_adds','j_reduce','j_mfehon','j_proc'].forEach(g=>{$(g).querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});$('j_brokeBox').style.display='none';$('j_mfeUsedBox').style.display='none';$('j_date').value=todayStr();$('jrnFormTitle').textContent='Log a trade';$('jrnEditingId').textContent='';$('jrnCancel').style.display='none';}
+function deleteTrade(id){if(!confirm('Delete this trade?'))return;DB.journal=DB.journal.filter(x=>x.id!=id);saveDB();renderJournal();renderBadges();toast('Deleted');}
+function renderJournal(){const j=DB.journal;const net=j.reduce((s,t)=>s+(t.pnl||0),0);const wins=j.filter(t=>t.pnl>0).length;const adh=processAdherence();
+  $('jrnStats').innerHTML=statBox('Trades',j.length,'')+statCard('Net P&L',net,true)+statBox('Process',adh.pct+(adh.pct=='—'?'':'%'),'followed');
+  fillThesisSelects();
+  const el=$('tradeList');if(!j.length){el.innerHTML='<div class="empty">No trades logged yet.</div>';return;}
+  el.innerHTML=j.map(t=>{const th=DB.theses.find(x=>x.id==t.thesisId);const verdict=t.process&&t.pnl!=null?verdictBox(t.process,t.pnl):'';
+    const detail=[];
+    if(t.engine)detail.push(t.engine);
+    if(t.exec)detail.push(t.exec);
+    if(t.ehold||t.ahold)detail.push('hold '+(t.ahold||'?')+(t.ehold?' vs '+t.ehold+' exp':''));
+    if(t.rmult!=null)detail.push((t.rmult>0?'+':'')+t.rmult+'R');
+    if(t.adds&&t.adds!='none')detail.push('add '+(t.adds=='momentum'?'with momentum':'on a higher pullback'));
+    if(t.reduce&&t.reduce!='none')detail.push('reduced '+(t.reduce=='strength'?'into strength':'on weakness'));
+    if(t.mfehon=='no')detail.push('let MFE round-trip');
+    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(t.instrument)} <span class="chip pnl${t.pnl>0?'pos':'neg'}" style="margin-left:6px">${t.pnl<0?'−$':'$'}${fmt(Math.abs(t.pnl||0))}</span></div><div class="lc-meta">${t.mode?'<span class="chip teal">'+t.mode+'</span>':''}${t.direction?'<span class="chip">'+t.direction+'</span>':''}${t.tier?'<span class="chip">'+t.tier+'</span>':''}<span>${t.date}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}</div></div>${verdict}</div>
+    ${detail.length?`<div class="lc-meta" style="margin-top:6px">${detail.map(d=>esc(d)).join(' · ')}</div>`:''}
+    ${t.broke?`<div class="lc-meta" style="color:var(--red)">broke: ${esc(t.broke)}</div>`:''}
+    ${t.notes?`<div class="lc-body">${esc(t.notes)}</div>`:''}
+    <div class="lc-actions"><button class="btn ghost sm" onclick="editTrade('${t.id}')">Edit</button><button class="btn danger sm" onclick="deleteTrade('${t.id}')">Delete</button></div></div>`;}).join('');}
+function verdictBox(proc,pnl){const f=proc=='followed';const w=pnl>0;let txt,col;if(f&&w){txt='Followed · Won';col='var(--green)';}else if(f&&!w){txt='Followed · Lost — paid for';col='var(--teal)';}else if(!f&&!w){txt='Broke · Lost';col='var(--red)';}else{txt='Broke · Won ⚠';col='var(--gold)';}return`<div class="lc-meta" style="color:${col};font-weight:600">${txt}</div>`;}
+
+/* ============ BADGES ============ */
+function renderBadges(){$('bThe').textContent=DB.theses.filter(t=>t.status!='closed').length;$('bWatch').textContent=DB.watchlist.length;$('bJrn').textContent=DB.journal.length;}
+function renderAll(){renderBadges();renderToday();}
+
+/* ============ INIT ============ */
+loadDB().then(db=>{DB=db;if(!DB.settings)DB.settings=defaultDB().settings;['preps','theses','watchlist','journal','marks','marksFinal'].forEach(k=>{if(!DB[k])DB[k]=defaultDB()[k];});
+  $('pp_date').value=todayStr();$('j_date').value=todayStr();fillThesisSelects();renderAll();});
+</script>
+</body>
+</html>

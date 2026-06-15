@@ -79,9 +79,12 @@ textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var
 .lc .lc-body{font-size:13px;color:var(--muted);line-height:1.5;margin:6px 0}
 .lc .lc-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;padding:2px 8px;border-radius:10px;border:1px solid var(--line2);color:var(--muted);text-transform:uppercase}
-.chip.A{color:var(--green);border-color:rgba(111,192,139,.4)}
-.chip.B{color:var(--gold);border-color:var(--gold-line)}
-.chip.C{color:var(--muted)}
+.chip.A{background:rgba(111,192,139,.16);color:var(--green);border-color:rgba(111,192,139,.45)}
+.chip.B{background:rgba(224,162,62,.15);color:var(--gold);border-color:var(--gold-line)}
+.chip.C{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line2)}
+.chip.sza{background:rgba(111,192,139,.16);color:var(--green);border-color:rgba(111,192,139,.45)}
+.chip.szb{background:rgba(224,162,62,.15);color:var(--gold);border-color:var(--gold-line)}
+.chip.szc{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line2)}
 .chip.g{color:var(--green);border-color:rgba(111,192,139,.4)}.chip.y{color:var(--gold);border-color:var(--gold-line)}.chip.r{color:var(--red);border-color:rgba(226,116,107,.4)}
 .chip.teal{color:var(--teal);border-color:rgba(82,205,192,.4)}
 .chip.pnlpos{color:var(--green)}.chip.pnlneg{color:var(--red)}
@@ -155,7 +158,8 @@ textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var
       <div id="marksLedger" style="margin-top:14px"></div>
     </div></div>
     <div class="stats" id="todayStats"></div>
-    <div class="panel"><div class="p-head"><span class="t">This morning's prep</span><span class="q" id="prepStatus"></span></div><div class="p-body" id="todayPrep"></div></div>
+    <div class="panel"><div class="p-head"><span class="t">Open positions</span><span class="q" id="posCount"></span></div><div class="p-body" id="todayPositions"></div></div>
+    <div class="panel"><div class="p-head"><span class="t">This morning's focus</span><span class="q" id="prepStatus"></span></div><div class="p-body" id="todayPrep"></div></div>
     <div class="row">
       <div class="panel"><div class="p-head"><span class="t">Top theses</span></div><div class="p-body" id="todayTheses"></div></div>
       <div class="panel"><div class="p-head"><span class="t">Watchlist</span></div><div class="p-body" id="todayWatch"></div></div>
@@ -229,7 +233,8 @@ textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var
           <div class="row"><div class="fld"><label>Instrument</label><input type="text" id="g_inst" placeholder="ZT, NKD, CL..." oninput="gate()"></div>
             <div class="fld"><label>Direction</label><div class="seg" id="g_dir"><button data-v="long" onclick="seg('g_dir',this)">Long</button><button data-v="short" onclick="seg('g_dir',this)">Short</button></div></div></div>
           <div class="permbox" id="g_perm"></div>
-          <div class="fld" style="margin-top:12px"><label>Engine</label><div class="seg" id="g_eng"><button data-v="cat" onclick="seg('g_eng',this)">Catalyst</button><button data-v="fade" onclick="seg('g_eng',this)">Fade</button><button data-v="data" onclick="seg('g_eng',this)">Data</button></div></div>
+          <div class="row"><div class="fld" style="margin-top:12px"><label>Engine</label><div class="seg" id="g_eng"><button data-v="cat" onclick="seg('g_eng',this)">Catalyst</button><button data-v="fade" onclick="seg('g_eng',this)">Fade</button><button data-v="data" onclick="seg('g_eng',this)">Data</button></div></div>
+            <div class="fld" style="margin-top:12px"><label>Conviction</label><div class="seg" id="g_conv"><button data-v="A" onclick="seg('g_conv',this)">A</button><button data-v="B" onclick="seg('g_conv',this)">B</button><button data-v="C" onclick="seg('g_conv',this)">C</button></div></div></div>
           <div class="fld"><label>Written thesis?</label><div class="seg" id="g_prep"><button data-v="yes" onclick="seg('g_prep',this)">Written</button><button data-v="thin" onclick="seg('g_prep',this)">"chance"</button><button data-v="no" onclick="seg('g_prep',this)">None</button></div></div>
           <div class="fld"><label>One-sentence thesis</label><textarea id="g_thtext" placeholder="View + transmission." oninput="gate()"></textarea></div>
           <div class="fld"><label>Written invalidation</label><input type="text" id="g_inval" placeholder="level/event that proves it wrong" oninput="gate()"></div>
@@ -296,6 +301,7 @@ textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var
         <div class="fld"><label>Direction</label><div class="seg" id="j_dir"><button data-v="Long" onclick="seg('j_dir',this)">Long</button><button data-v="Short" onclick="seg('j_dir',this)">Short</button></div></div>
         <div class="fld"><label>Tier reached</label><div class="seg" id="j_tier"><button data-v="Probe" onclick="seg('j_tier',this)">Probe</button><button data-v="Medium" onclick="seg('j_tier',this)">Med</button><button data-v="Max" onclick="seg('j_tier',this)">Max</button></div></div>
       </div>
+      <div class="fld"><label>Conviction</label><div class="seg" id="j_conv"><button data-v="A" onclick="seg('j_conv',this)">A</button><button data-v="B" onclick="seg('j_conv',this)">B</button><button data-v="C" onclick="seg('j_conv',this)">C</button></div></div>
       <div class="row"><div class="fld"><label>Engine</label><div class="seg" id="j_eng"><button data-v="Catalyst" onclick="seg('j_eng',this)">Catalyst</button><button data-v="Fade" onclick="seg('j_eng',this)">Fade</button><button data-v="Data" onclick="seg('j_eng',this)">Data</button></div></div>
         <div class="fld"><label>Linked thesis</label><select id="j_thesis"></select></div></div>
       <div class="row3"><div class="fld"><label>Expected hold <span class="opt">— from the gate</span></label><input type="text" id="j_ehold" placeholder="2 days"></div>
@@ -407,17 +413,28 @@ function renderToday(){
   const prep=DB.preps[todayStr()];
   $('prepStatus').innerHTML=prep?'<span style="color:var(--green)">done</span>':'<span style="color:var(--red)">not yet</span>';
   $('todayPrep').innerHTML=prep?prepSummary(prep):'<div class="empty">No prep for today yet. <a href="#" onclick="go(\'prep\');return false" style="color:var(--gold)">Write it →</a></div>';
+  $('posCount').textContent=DB.active.length?DB.active.length+' on':'';
+  $('todayPositions').innerHTML=DB.active.length?DB.active.map(a=>{const th=DB.theses.find(t=>t.id==a.thesisId);
+    return`<div class="lc" onclick="go('watch')" style="cursor:pointer;border-color:var(--gold-line)">
+      <div class="lc-top"><div><div class="lc-title">${esc(a.inst||'—')} <span class="lc-meta" style="display:inline">${esc(a.dir||'')}</span></div><div class="lc-meta">${a.conviction?'<span class="chip '+a.conviction+'">'+a.conviction+'</span>':''}${sizeChip(a.tier)}${modeChip(a.mode)}<span>entered ${ageStr(a.enteredAt)}</span></div></div></div>
+      ${(th||a.thtext)?`<div class="lc-body" style="color:var(--text)">${esc(th?th.title:a.thtext)}</div>`:''}${a.inval?`<div class="lc-meta">wrong if: ${esc(a.inval)}</div>`:''}</div>`;}).join(''):'<div class="empty">Flat — no open positions. Mark a watchlist item entered when you put one on.</div>';
   const tt=DB.theses.filter(t=>t.status!='closed').sort((a,b)=>(a.conviction||'C').localeCompare(b.conviction||'C')).slice(0,4);
   $('todayTheses').innerHTML=tt.length?tt.map(t=>`<div onclick="editThesis('${t.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer"><div><span class="chip ${t.conviction}">${t.conviction||'?'}</span> ${esc(t.title)}</div><span class="lc-meta">${esc(t.products||'')}${t.products&&t.direction?' · ':''}${esc(t.direction||'')}</span></div>`).join(''):'<div class="empty">No theses yet.</div>';
   $('todayWatch').innerHTML=DB.watchlist.length?DB.watchlist.slice(0,4).map(w=>`<div onclick="go('watch')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer"><div>${esc(w.inst||'—')} <span class="lc-meta">${esc(w.dir||'')}</span>${w.level?`<span class="lc-meta" style="color:var(--gold)"> ▸ ${esc(w.level)}</span>`:''}</div><span class="lc-meta">${ageStr(w.savedAt)}</span></div>`).join(''):'<div class="empty">Nothing waiting.</div>';
 }
 function statCard(k,v,pnl){const cls=pnl?(v>0?'pos':(v<0?'neg':'')):'';return`<div class="stat"><div class="k">${k}</div><div class="v ${cls}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</div></div>`;}
 function statBox(k,v,d){return`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;}
-function prepSummary(p){const pos=(p.positions&&p.positions.length)?p.positions.map(x=>`${esc(x.inst)} ${esc(x.dir||'')}${x.size?' ('+esc(x.size)+')':''}`).join(' · '):'flat';
+function prepSummary(p){
   const planParts=[];if(p.allowedTrades&&p.allowedTrades.length)planParts.push(p.allowedTrades.map(a=>`${esc(a.inst)} ${esc(a.dir||'')}${a.level?' if '+esc(a.level):''}`).join(' · '));if(p.planNote)planParts.push(esc(p.planNote));
   const plan=planParts.length?planParts.join('<br>'):'—';
-  return`<div class="lc-body"><b style="color:var(--text)">Narrative:</b> ${esc(p.narr||'—')}<br><b style="color:var(--text)">On the book:</b> ${pos}<br><b style="color:var(--text)">Plan:</b> ${plan}</div>`;}
+  const adds=(p.positions||[]).filter(x=>x.adds).map(x=>`${esc(x.inst)} — ${esc(x.adds)}`);
+  const rows=[['Narrative',esc(p.narr||'—')],['Plan',plan]];
+  if(adds.length)rows.push(['Looking to add',adds.join('<br>')]);
+  if(p.dis)rows.push(['Not touching',esc(p.dis)]);
+  return`<div class="lc-body">`+rows.map((r,i)=>`<div style="margin-bottom:${i<rows.length-1?'11px':'0'}"><b style="color:var(--text)">${r[0]}:</b> ${r[1]}</div>`).join('')+`</div>`;}
 function ageStr(ts){const d=Math.floor((Date.now()-ts)/86400000);return d<=0?'today':d+'d ago';}
+function sizeChip(tier){const m={a:['sza','Max'],b:['szb','Medium'],c:['szc','Probe'],Max:['sza','Max'],Medium:['szb','Medium'],Probe:['szc','Probe']};const e=m[tier];return e?'<span class="chip '+e[0]+'">'+e[1]+'</span>':'';}
+function modeChip(mode){const t=mode=='pos'?'Position':(mode=='tac'?'Tactical':(mode||''));return t?'<span class="chip">'+t+'</span>':'';}
 function processAdherence(){const j=DB.journal.filter(t=>t.process);if(!j.length)return{pct:'—',n:0};const f=j.filter(t=>t.process=='followed').length;return{pct:Math.round(f/j.length*100),n:j.length};}
 function saveTodayMark(){const v=num('todayMark');if(!DB.marks)DB.marks={};if(v==null)delete DB.marks[todayStr()];else DB.marks[todayStr()]=v;saveDB();renderToday();toast('Mark updated');}
 function renderMarksLedger(){const el=$('marksLedger');if(!el)return;const dates=Object.keys(DB.marks||{}).sort().reverse().slice(0,10);
@@ -515,9 +532,9 @@ function deleteThesis(id){if(!confirm('Delete this thesis?'))return;DB.theses=DB
 function thesisPnl(id){return DB.journal.filter(t=>t.thesisId==id&&t.pnl!=null).reduce((s,t)=>s+t.pnl,0);}
 function renderTheses(){const el=$('thesisList');if(!DB.theses.length){el.innerHTML='<div class="empty">No theses yet. Add your first above.</div>';return;}
   el.innerHTML=DB.theses.map(t=>{const pnl=thesisPnl(t.id);const n=DB.journal.filter(x=>x.thesisId==t.id).length;
-    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(t.title)}</div><div class="lc-meta"><span class="chip ${t.conviction}">${t.conviction}</span><span class="chip">${esc(t.direction||'—')}</span><span class="chip ${t.status=='active'?'g':(t.status=='watch'?'y':'')}">${t.status}</span>${esc(t.products||'')}</div></div><div style="text-align:right"><div class="lc-meta"><span class="chip ${pnl>0?'pnlpos':(pnl<0?'pnlneg':'')}">${pnl<0?'−$':'$'}${fmt(Math.abs(pnl))}</span></div><div class="lc-meta" style="margin-top:4px">${n} trade${n==1?'':'s'}</div></div></div>
-    <div class="lc-body">${esc(t.narr||'')}</div>
-    ${t.inval?`<div class="lc-meta">✕ wrong if: ${esc(t.inval)}</div>`:''}
+    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(t.title)}</div><div class="lc-meta"><span class="chip ${t.conviction}">${t.conviction}</span><span class="chip ${t.status=='active'?'g':(t.status=='watch'?'y':'')}">${t.status}</span>${esc(t.products||'')}</div></div><div style="text-align:right"><div class="lc-meta"><span class="chip ${pnl>0?'pnlpos':(pnl<0?'pnlneg':'')}">${pnl<0?'−$':'$'}${fmt(Math.abs(pnl))}</span></div><div class="lc-meta" style="margin-top:4px">${n} trade${n==1?'':'s'}</div></div></div>
+    <div class="lc-body" style="color:var(--text)">${esc(t.narr||'')}</div>
+    ${t.inval?`<div class="lc-meta">wrong if: ${esc(t.inval)}</div>`:''}
     <div class="lc-actions"><button class="btn ghost sm" onclick="editThesis('${t.id}')">Edit</button><button class="btn ghost sm" onclick="gateFromThesis('${t.id}')">Check in gate</button><button class="btn danger sm" onclick="deleteThesis('${t.id}')">Delete</button></div></div>`;}).join('');}
 
 /* ============ GATE ============ */
@@ -587,10 +604,10 @@ function flagEl(id,m){const e=$(id);if(m){e.textContent=m;e.className='flag red 
 function buildTicket(red,amber,todo,d){if(todo||red){$('ticketOut').textContent=red&&!todo?'⛔ Blocked by a rule — no ticket.':'Clear the gates to assemble a ticket.';return;}
   const ct=(d.maxLoss&&d.riskPer)?Math.floor(d.maxLoss/d.riskPer):'—';const mode=d.rec.active?'Recovery (auto)':(SEG.g_mode=='pos'?'Position':'Tactical');
   $('ticketOut').textContent=`VERDICT   ${amber?'CONDITIONAL':'CLEARED'}\nMODE      ${mode}\nPRODUCT   ${$('g_inst').value||'—'} (${d.prod?d.prod.p.toUpperCase():'?'}) · ${SEG.g_dir||'—'}\nHOLD      ${$('g_hold').value||'—'}\nTHESIS    ${$('g_thtext').value||'—'}\nWRONG IF  ${$('g_inval').value||'—'}\nTRIGGER   ${$('g_level').value||'—'}\nCEILING   $${d.effCap!=null?fmt(d.effCap):'—'}\nMAX LOSS  $${d.maxLoss!=null?fmt(d.maxLoss):'—'}\nSIZE      ${ct} contracts`;}
-function gateSnapshot(){return{inst:$('g_inst').value,dir:SEG.g_dir||'',mode:SEG.g_mode||'',eng:SEG.g_eng||'',thesisId:$('g_thesis').value||'',thtext:$('g_thtext').value,inval:$('g_inval').value,level:$('g_level').value,hold:$('g_hold').value,mfe:SEG.g_mfe||'',maxloss:num('g_maxloss'),rr:num('g_rr'),tier:SEG.g_tier||''};}
+function gateSnapshot(){return{inst:$('g_inst').value,dir:SEG.g_dir||'',mode:SEG.g_mode||'',eng:SEG.g_eng||'',conviction:SEG.g_conv||'',ready:SEG.g_ready||'',prep:SEG.g_prep||'',plan:SEG.g_plan||'',corr:SEG.g_corr||'',mid:SEG.g_mid||'',thesisId:$('g_thesis').value||'',thtext:$('g_thtext').value,inval:$('g_inval').value,level:$('g_level').value,hold:$('g_hold').value,mfe:SEG.g_mfe||'',maxloss:num('g_maxloss'),rr:num('g_rr'),tier:SEG.g_tier||''};}
 let gateWatchId=null;
 function clearGate(){['g_inst','g_thtext','g_inval','g_level','g_rr','g_hold','g_maxloss','g_riskper'].forEach(i=>{if($(i))$(i).value='';});
-  ['g_ready','g_mode','g_dir','g_eng','g_prep','g_plan','g_corr','g_mid','g_tier','g_mfe'].forEach(g=>{const c=$(g);if(c)c.querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});
+  ['g_ready','g_mode','g_dir','g_eng','g_conv','g_prep','g_plan','g_corr','g_mid','g_tier','g_mfe'].forEach(g=>{const c=$(g);if(c)c.querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});
   if($('g_thesis'))$('g_thesis').value='';if($('g_mfeDesc'))$('g_mfeDesc').textContent='';gateWatchId=null;gate();}
 function saveToWatch(){const snap=gateSnapshot();if(!snap.inst){toast('Add an instrument first');return;}
   if(gateWatchId){const i=DB.watchlist.findIndex(w=>w.id==gateWatchId);if(i>-1){snap.id=gateWatchId;snap.savedAt=DB.watchlist[i].savedAt;DB.watchlist[i]=snap;saveDB();renderBadges();clearGate();toast('Watchlist item updated');return;}}
@@ -601,35 +618,39 @@ function gateToActive(){const snap=gateSnapshot();if(!snap.inst){toast('Add an i
 function renderWatch(){const el=$('watchList');let html='';
   html+=`<div class="sectiontitle" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:4px 0 10px">Open positions — entered, not yet closed</div>`;
   html+=DB.active.length?DB.active.map(w=>{const th=DB.theses.find(t=>t.id==w.thesisId);
-    return`<div class="lc" style="border-color:var(--gold-line)"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta"><span class="chip teal">${w.mode=='pos'?'Position':(w.mode=='tac'?'Tactical':'—')}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>entered ${ageStr(w.enteredAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
+    return`<div class="lc" style="border-color:var(--gold-line)"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta">${w.conviction?'<span class="chip '+w.conviction+'">'+w.conviction+'</span>':''}${sizeChip(w.tier)}${modeChip(w.mode)}${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>entered ${ageStr(w.enteredAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
     ${w.level?`<div class="lc-meta" style="color:var(--gold)">▸ entry: ${esc(w.level)}</div>`:''}
-    <div class="lc-body">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">✕ wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
+    <div class="lc-body" style="color:var(--text)">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
     <div class="lc-actions"><button class="btn sm" onclick="activeToJournal('${w.id}')">Closed → journal</button><button class="btn ghost sm" onclick="activeToGate('${w.id}')">Re-check / manage</button><button class="btn danger sm" onclick="deleteActive('${w.id}')">Remove</button></div></div>`;}).join(''):'<div class="empty">No open positions. Mark a watchlist item "Entered" when you put it on.</div>';
   html+=`<div class="sectiontitle" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:22px 0 10px">Watching — gate-checked, waiting for the trigger</div>`;
   html+=DB.watchlist.length?DB.watchlist.map(w=>{const th=DB.theses.find(t=>t.id==w.thesisId);
-    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta"><span class="chip teal">${w.mode=='pos'?'Position':(w.mode=='tac'?'Tactical':'—')}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>${ageStr(w.savedAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
+    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta">${w.conviction?'<span class="chip '+w.conviction+'">'+w.conviction+'</span>':''}${sizeChip(w.tier)}${modeChip(w.mode)}${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>${ageStr(w.savedAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
     ${w.level?`<div class="lc-meta" style="color:var(--gold)">▸ trigger: ${esc(w.level)}</div>`:''}
-    <div class="lc-body">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">✕ wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
+    <div class="lc-body" style="color:var(--text)">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
     <div class="lc-actions"><button class="btn sm" onclick="markEntered('${w.id}')">Mark entered</button><button class="btn ghost sm" onclick="watchToGate('${w.id}')">Re-check</button><button class="btn danger sm" onclick="deleteWatch('${w.id}')">Delete</button></div></div>`;}).join(''):'<div class="empty">Nothing waiting. Check a trade in the Gate and "Save to watchlist".</div>';
   el.innerHTML=html;}
 function markEntered(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;const a=Object.assign({},w);a.enteredAt=Date.now();DB.active.unshift(a);DB.watchlist=DB.watchlist.filter(x=>x.id!=id);saveDB();renderWatch();renderBadges();renderToday();toast('Marked entered — now an open position');}
 function deleteActive(id){if(!confirm('Remove this open position?'))return;DB.active=DB.active.filter(x=>x.id!=id);saveDB();renderWatch();renderBadges();renderToday();toast('Removed');}
 function activeToJournal(id){const a=DB.active.find(x=>x.id==id);if(!a)return;prefillTradeFromSnap(a);DB.active=DB.active.filter(x=>x.id!=id);saveDB();renderBadges();renderToday();go('journal');toast('Closed — fill P&L and save');}
-function activeToGate(id){const a=DB.active.find(x=>x.id==id);if(!a)return;gateWatchId=null;go('gate');setTimeout(()=>{$('g_inst').value=a.inst||'';$('g_thtext').value=a.thtext||'';$('g_inval').value=a.inval||'';$('g_level').value=a.level||'';$('g_hold').value=a.hold||'';if(a.mfe)segSet('g_mfe',a.mfe);if(a.maxloss)$('g_maxloss').value=a.maxloss;if(a.rr)$('g_rr').value=a.rr;if(a.dir)segSet('g_dir',a.dir);if(a.mode)segSet('g_mode',a.mode);if(a.eng)segSet('g_eng',a.eng);if(a.tier)segSet('g_tier',a.tier);if(a.thesisId)$('g_thesis').value=a.thesisId;gate();},60);}
+function activeToGate(id){const a=DB.active.find(x=>x.id==id);if(!a)return;go('gate');setTimeout(()=>{clearGate();gateWatchId=null;loadGateFrom(a);gate();},60);}
 function deleteWatch(id){DB.watchlist=DB.watchlist.filter(w=>w.id!=id);saveDB();renderWatch();renderBadges();toast('Removed');}
-function watchToGate(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;gateWatchId=id;go('gate');setTimeout(()=>{$('g_inst').value=w.inst||'';$('g_thtext').value=w.thtext||'';$('g_inval').value=w.inval||'';$('g_level').value=w.level||'';$('g_hold').value=w.hold||'';if(w.mfe)segSet('g_mfe',w.mfe);if(w.maxloss)$('g_maxloss').value=w.maxloss;if(w.rr)$('g_rr').value=w.rr;if(w.dir)segSet('g_dir',w.dir);if(w.mode)segSet('g_mode',w.mode);if(w.eng)segSet('g_eng',w.eng);if(w.tier)segSet('g_tier',w.tier);if(w.thesisId)$('g_thesis').value=w.thesisId;gate();},60);}
+function watchToGate(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;go('gate');setTimeout(()=>{clearGate();gateWatchId=id;loadGateFrom(w);gate();},60);}
+function loadGateFrom(w){$('g_inst').value=w.inst||'';$('g_thtext').value=w.thtext||'';$('g_inval').value=w.inval||'';$('g_level').value=w.level||'';$('g_hold').value=w.hold||'';if(w.maxloss)$('g_maxloss').value=w.maxloss;if(w.rr)$('g_rr').value=w.rr;
+  if(w.dir)segSet('g_dir',w.dir);if(w.mode)segSet('g_mode',w.mode);if(w.eng)segSet('g_eng',w.eng);if(w.conviction)segSet('g_conv',w.conviction);if(w.tier)segSet('g_tier',w.tier);if(w.mfe)segSet('g_mfe',w.mfe);
+  if(w.ready)segSet('g_ready',w.ready);if(w.prep)segSet('g_prep',w.prep);if(w.plan)segSet('g_plan',w.plan);if(w.corr)segSet('g_corr',w.corr);if(w.mid)segSet('g_mid',w.mid);
+  if(w.thesisId)$('g_thesis').value=w.thesisId;}
 
 /* ============ JOURNAL ============ */
 let editingTrade=null;
-function prefillTradeFromSnap(snap){resetTradeForm();$('j_date').value=todayStr();$('j_inst').value=snap.inst||'';$('j_ehold').value=snap.hold||'';$('j_mfe').value=snap.mfe||'';if(snap.dir)segSet('j_dir',snap.dir.charAt(0).toUpperCase()+snap.dir.slice(1));if(snap.mode=='pos')segSet('j_mode','Position');if(snap.mode=='tac')segSet('j_mode','Tactical');if(snap.eng)segSet('j_eng',snap.eng.charAt(0).toUpperCase()+snap.eng.slice(1));if(snap.tier)segSet('j_tier',{a:'Max',b:'Medium',c:'Probe'}[snap.tier]||'');if(snap.rr!=null)$('j_rmult').value='';setTimeout(()=>{fillThesisSelects();if(snap.thesisId)$('j_thesis').value=snap.thesisId;},30);}
-function saveTrade(){const t={id:editingTrade||uid(),date:$('j_date').value||todayStr(),instrument:$('j_inst').value.trim(),pnl:num('j_pnl'),mode:SEG.j_mode||'',direction:SEG.j_dir||'',tier:SEG.j_tier||'',engine:SEG.j_eng||'',exec:SEG.j_exec||'',thesisId:$('j_thesis').value||'',ehold:$('j_ehold').value.trim(),ahold:$('j_ahold').value.trim(),rmult:num('j_rmult'),entry:$('j_entry').value.trim(),exit:$('j_exit').value.trim(),adds:SEG.j_adds||'',reduce:SEG.j_reduce||'',mfe:$('j_mfe').value,mfehon:SEG.j_mfehon||'',process:SEG.j_proc||'',broke:$('j_broke').value.trim(),notes:$('j_notes').value.trim()};
+function prefillTradeFromSnap(snap){resetTradeForm();$('j_date').value=todayStr();$('j_inst').value=snap.inst||'';$('j_ehold').value=snap.hold||'';$('j_mfe').value=snap.mfe||'';if(snap.dir)segSet('j_dir',snap.dir.charAt(0).toUpperCase()+snap.dir.slice(1));if(snap.mode=='pos')segSet('j_mode','Position');if(snap.mode=='tac')segSet('j_mode','Tactical');if(snap.eng)segSet('j_eng',snap.eng.charAt(0).toUpperCase()+snap.eng.slice(1));if(snap.tier)segSet('j_tier',{a:'Max',b:'Medium',c:'Probe'}[snap.tier]||'');if(snap.conviction)segSet('j_conv',snap.conviction);if(snap.rr!=null)$('j_rmult').value='';setTimeout(()=>{fillThesisSelects();if(snap.thesisId)$('j_thesis').value=snap.thesisId;},30);}
+function saveTrade(){const t={id:editingTrade||uid(),date:$('j_date').value||todayStr(),instrument:$('j_inst').value.trim(),pnl:num('j_pnl'),mode:SEG.j_mode||'',direction:SEG.j_dir||'',tier:SEG.j_tier||'',conviction:SEG.j_conv||'',engine:SEG.j_eng||'',exec:SEG.j_exec||'',thesisId:$('j_thesis').value||'',ehold:$('j_ehold').value.trim(),ahold:$('j_ahold').value.trim(),rmult:num('j_rmult'),entry:$('j_entry').value.trim(),exit:$('j_exit').value.trim(),adds:SEG.j_adds||'',reduce:SEG.j_reduce||'',mfe:$('j_mfe').value,mfehon:SEG.j_mfehon||'',process:SEG.j_proc||'',broke:$('j_broke').value.trim(),notes:$('j_notes').value.trim()};
   if(!t.instrument){toast('Needs an instrument');return;}
   if(editingTrade){const i=DB.journal.findIndex(x=>x.id==editingTrade);DB.journal[i]=t;}else DB.journal.unshift(t);
   saveDB();resetTradeForm();renderJournal();renderBadges();renderToday();toast('Trade saved');}
 function editTrade(id){const t=DB.journal.find(x=>x.id==id);if(!t)return;editingTrade=id;$('jrnFormTitle').textContent='Edit trade';$('jrnEditingId').textContent='editing';$('jrnCancel').style.display='inline-block';
   $('j_date').value=t.date;$('j_inst').value=t.instrument;$('j_pnl').value=t.pnl;$('j_ehold').value=t.ehold||'';$('j_ahold').value=t.ahold||'';$('j_rmult').value=t.rmult!=null?t.rmult:'';$('j_entry').value=t.entry||'';$('j_exit').value=t.exit||'';$('j_mfe').value=t.mfe||'';$('j_broke').value=t.broke||'';$('j_notes').value=t.notes||'';fillThesisSelects();$('j_thesis').value=t.thesisId||'';
-  if(t.mode)segSet('j_mode',t.mode);if(t.direction)segSet('j_dir',t.direction);if(t.tier)segSet('j_tier',t.tier);if(t.engine)segSet('j_eng',t.engine);if(t.exec)segSet('j_exec',t.exec);if(t.adds)segSet('j_adds',t.adds);if(t.reduce)segSet('j_reduce',t.reduce);if(t.mfehon)segSet('j_mfehon',t.mfehon);if(t.process)segSet('j_proc',t.process);$('j_brokeBox').style.display=t.process=='broke'?'block':'none';$('j_mfeUsedBox').style.display=t.mfehon=='yes'?'block':'none';window.scrollTo(0,0);}
-function resetTradeForm(){editingTrade=null;['j_inst','j_pnl','j_ehold','j_ahold','j_rmult','j_entry','j_exit','j_mfe','j_broke','j_notes'].forEach(i=>$(i).value='');['j_mode','j_dir','j_tier','j_eng','j_exec','j_adds','j_reduce','j_mfehon','j_proc'].forEach(g=>{$(g).querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});$('j_brokeBox').style.display='none';$('j_mfeUsedBox').style.display='none';$('j_date').value=todayStr();$('jrnFormTitle').textContent='Log a trade';$('jrnEditingId').textContent='';$('jrnCancel').style.display='none';}
+  if(t.mode)segSet('j_mode',t.mode);if(t.direction)segSet('j_dir',t.direction);if(t.tier)segSet('j_tier',t.tier);if(t.conviction)segSet('j_conv',t.conviction);if(t.engine)segSet('j_eng',t.engine);if(t.exec)segSet('j_exec',t.exec);if(t.adds)segSet('j_adds',t.adds);if(t.reduce)segSet('j_reduce',t.reduce);if(t.mfehon)segSet('j_mfehon',t.mfehon);if(t.process)segSet('j_proc',t.process);$('j_brokeBox').style.display=t.process=='broke'?'block':'none';$('j_mfeUsedBox').style.display=t.mfehon=='yes'?'block':'none';window.scrollTo(0,0);}
+function resetTradeForm(){editingTrade=null;['j_inst','j_pnl','j_ehold','j_ahold','j_rmult','j_entry','j_exit','j_mfe','j_broke','j_notes'].forEach(i=>$(i).value='');['j_mode','j_dir','j_tier','j_conv','j_eng','j_exec','j_adds','j_reduce','j_mfehon','j_proc'].forEach(g=>{$(g).querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});$('j_brokeBox').style.display='none';$('j_mfeUsedBox').style.display='none';$('j_date').value=todayStr();$('jrnFormTitle').textContent='Log a trade';$('jrnEditingId').textContent='';$('jrnCancel').style.display='none';}
 function deleteTrade(id){if(!confirm('Delete this trade?'))return;DB.journal=DB.journal.filter(x=>x.id!=id);saveDB();renderJournal();renderBadges();toast('Deleted');}
 function renderJournal(){const j=DB.journal;const net=j.reduce((s,t)=>s+(t.pnl||0),0);const wins=j.filter(t=>t.pnl>0).length;const adh=processAdherence();
   $('jrnStats').innerHTML=statBox('Trades',j.length,'')+statCard('Net P&L',net,true)+statBox('Process',adh.pct+(adh.pct=='—'?'':'%'),'followed');
@@ -644,7 +665,7 @@ function renderJournal(){const j=DB.journal;const net=j.reduce((s,t)=>s+(t.pnl||
     if(t.adds&&t.adds!='none')detail.push('add '+(t.adds=='momentum'?'with momentum':'on a higher pullback'));
     if(t.reduce&&t.reduce!='none')detail.push('reduced '+(t.reduce=='strength'?'into strength':'on weakness'));
     if(t.mfehon=='no')detail.push('let MFE round-trip');
-    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(t.instrument)} <span class="chip pnl${t.pnl>0?'pos':'neg'}" style="margin-left:6px">${t.pnl<0?'−$':'$'}${fmt(Math.abs(t.pnl||0))}</span></div><div class="lc-meta">${t.mode?'<span class="chip teal">'+t.mode+'</span>':''}${t.direction?'<span class="chip">'+t.direction+'</span>':''}${t.tier?'<span class="chip">'+t.tier+'</span>':''}<span>${t.date}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}</div></div>${verdict}</div>
+    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(t.instrument)} <span class="chip pnl${t.pnl>0?'pos':'neg'}" style="margin-left:6px">${t.pnl<0?'−$':'$'}${fmt(Math.abs(t.pnl||0))}</span></div><div class="lc-meta">${t.conviction?'<span class="chip '+t.conviction+'">'+t.conviction+'</span>':''}${sizeChip(t.tier)}${t.mode?'<span class="chip">'+t.mode+'</span>':''}${t.direction?'<span class="chip">'+t.direction+'</span>':''}<span>${t.date}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}</div></div>${verdict}</div>
     ${detail.length?`<div class="lc-meta" style="margin-top:6px">${detail.map(d=>esc(d)).join(' · ')}</div>`:''}
     ${t.broke?`<div class="lc-meta" style="color:var(--red)">broke: ${esc(t.broke)}</div>`:''}
     ${t.notes?`<div class="lc-body">${esc(t.notes)}</div>`:''}

@@ -175,11 +175,16 @@ textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var
 
       <div class="fld"><label>Positions on the book <span class="opt">— what you're holding, how big, why, and where you're wrong</span></label>
         <div id="pp_posList"></div>
-        <button class="btn ghost sm" onclick="addPrepPos()" style="margin-top:8px">+ Add position</button></div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn ghost sm" onclick="addPrepPos()">+ Add manually</button>
+          <select id="pp_posPull" onchange="addPrepPosFromActive(this.value);this.value=''" style="flex:1;min-width:200px;font-size:12px"><option value="">↓ Pull from open positions…</option></select></div></div>
 
       <div class="fld"><label>Today's plan / allowed trades <span class="opt">— product · direction · level/trigger · stop · size · hold</span></label>
         <div id="pp_allowedList"></div>
-        <button class="btn ghost sm" onclick="addAllowed()" style="margin-top:8px">+ Add a planned trade</button></div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn ghost sm" onclick="addAllowed()">+ Add manually</button>
+          <select id="pp_allowedPull" onchange="addAllowedFromWatch(this.value);this.value=''" style="flex:1;min-width:200px;font-size:12px"><option value="">↓ Pull from watchlist…</option></select></div>
+        <div class="fld" style="margin-top:12px;margin-bottom:0"><label>Plan note <span class="opt">— optional; use this if you're mostly watching and not hunting a new position</span></label><textarea id="pp_planNote" placeholder="e.g. Watching markets today — no new risk unless CPI gives a clean break of 4180. Managing the NKD long, trailing under each higher-low."></textarea></div></div>
       <div class="fld"><label>Disallowed today <span class="opt">— tempting trades that are off-limits</span></label><textarea id="pp_dis" placeholder="What not to touch."></textarea></div>
       <div class="fld"><label>What I'm thinking <span class="opt">— the day in your own words; goes at the end of the note</span></label><textarea id="pp_summary" placeholder="The honest read — what you're watching for, what would change your mind, how you want to behave today." style="min-height:70px"></textarea></div>
       <div class="btnrow"><button class="btn" onclick="savePrep()">Save prep</button><button class="btn ghost" onclick="buildPrepText()">Build group message</button></div>
@@ -265,7 +270,7 @@ textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var
         <div class="ticket"><div class="th">Assembled ticket</div><div id="ticketOut">Clear the gates to assemble a ticket.</div></div>
         <div class="btnrow" style="margin-top:12px">
           <button class="btn ghost" id="g_saveWatch" onclick="saveToWatch()">Save to watchlist</button>
-          <button class="btn" id="g_toJournal" onclick="gateToJournal()">Entered → journal</button>
+          <button class="btn" id="g_toJournal" onclick="gateToActive()">Mark entered</button>
         </div>
         <div class="hint">Checked a trade you won't enter yet? Save it to the watchlist — it waits there (with a delete) until your level hits, or you bin it.</div>
       </div>
@@ -330,7 +335,7 @@ function lookupProd(raw){if(!raw)return null;const k=raw.trim().toUpperCase();if
 
 /* ============ STORAGE ============ */
 const KEY='tradeos:db:v1';
-function defaultDB(){return{settings:{unitA:20000,dayLim:40000,wkLim:80000,monLim:160000},preps:{},theses:[],watchlist:[],journal:[],marks:{},marksFinal:{}};}
+function defaultDB(){return{settings:{unitA:20000,dayLim:40000,wkLim:80000,monLim:160000},preps:{},theses:[],watchlist:[],active:[],journal:[],marks:{},marksFinal:{}};}
 let DB=defaultDB();
 async function loadDB(){
   try{if(window.storage&&window.storage.get){const r=await window.storage.get(KEY);if(r&&r.value)return JSON.parse(r.value);}}catch(e){}
@@ -408,7 +413,10 @@ function renderToday(){
 }
 function statCard(k,v,pnl){const cls=pnl?(v>0?'pos':(v<0?'neg':'')):'';return`<div class="stat"><div class="k">${k}</div><div class="v ${cls}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</div></div>`;}
 function statBox(k,v,d){return`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;}
-function prepSummary(p){const pos=(p.positions&&p.positions.length)?p.positions.map(x=>`${esc(x.inst)} ${esc(x.dir||'')}${x.size?' ('+esc(x.size)+')':''}`).join(' · '):'flat';const plan=(p.allowedTrades&&p.allowedTrades.length)?p.allowedTrades.map(a=>`${esc(a.inst)} ${esc(a.dir||'')}${a.level?' @ '+esc(a.level):''}`).join(' · '):'—';return`<div class="lc-body"><b style="color:var(--text)">Narrative:</b> ${esc(p.narr||'—')}<br><b style="color:var(--text)">On the book:</b> ${pos}<br><b style="color:var(--text)">Plan:</b> ${plan}</div>`;}
+function prepSummary(p){const pos=(p.positions&&p.positions.length)?p.positions.map(x=>`${esc(x.inst)} ${esc(x.dir||'')}${x.size?' ('+esc(x.size)+')':''}`).join(' · '):'flat';
+  const planParts=[];if(p.allowedTrades&&p.allowedTrades.length)planParts.push(p.allowedTrades.map(a=>`${esc(a.inst)} ${esc(a.dir||'')}${a.level?' if '+esc(a.level):''}`).join(' · '));if(p.planNote)planParts.push(esc(p.planNote));
+  const plan=planParts.length?planParts.join('<br>'):'—';
+  return`<div class="lc-body"><b style="color:var(--text)">Narrative:</b> ${esc(p.narr||'—')}<br><b style="color:var(--text)">On the book:</b> ${pos}<br><b style="color:var(--text)">Plan:</b> ${plan}</div>`;}
 function ageStr(ts){const d=Math.floor((Date.now()-ts)/86400000);return d<=0?'today':d+'d ago';}
 function processAdherence(){const j=DB.journal.filter(t=>t.process);if(!j.length)return{pct:'—',n:0};const f=j.filter(t=>t.process=='followed').length;return{pct:Math.round(f/j.length*100),n:j.length};}
 function saveTodayMark(){const v=num('todayMark');if(!DB.marks)DB.marks={};if(v==null)delete DB.marks[todayStr()];else DB.marks[todayStr()]=v;saveDB();renderToday();toast('Mark updated');}
@@ -455,18 +463,43 @@ function renderAllowed(){const el=$('pp_allowedList');if(!el)return;
 function addAllowed(){allowedTrades.push({inst:'',dir:'',level:'',stop:'',size:'',hold:'',why:''});renderAllowed();}
 function updAllowed(i,k,v){allowedTrades[i][k]=v;}
 function rmAllowed(i){allowedTrades.splice(i,1);renderAllowed();}
-function loadPrepForToday(){if(!$('pp_date').value)$('pp_date').value=todayStr();const p=DB.preps[$('pp_date').value];
-  if(p){$('pp_market').value=p.market||'';$('pp_narr').value=p.narr||'';$('pp_cal').value=p.cal||'';$('pp_dis').value=p.dis||'';$('pp_summary').value=p.summary||'';if(p.state)segSet('pp_state',p.state);prepPos=Array.isArray(p.positions)?JSON.parse(JSON.stringify(p.positions)):[];allowedTrades=Array.isArray(p.allowedTrades)?JSON.parse(JSON.stringify(p.allowedTrades)):[];}
-  else{['pp_market','pp_narr','pp_cal','pp_dis','pp_summary'].forEach(i=>$(i).value='');prepPos=[];allowedTrades=[];}
+const TIERNAME={a:'Max',b:'Medium',c:'Probe'};
+function addPrepPosFromActive(id){if(!id)return;const a=DB.active.find(x=>x.id==id);if(!a)return;const th=DB.theses.find(t=>t.id==a.thesisId);
+  prepPos.push({inst:a.inst||'',dir:a.dir||'',size:(TIERNAME[a.tier]||''),why:(th?th.title:'')||a.thtext||'',adds:'',inval:a.inval||''});renderPrepPos();}
+function addAllowedFromWatch(id){if(!id)return;const w=DB.watchlist.find(x=>x.id==id);if(!w)return;const th=DB.theses.find(t=>t.id==w.thesisId);
+  allowedTrades.push({inst:w.inst||'',dir:w.dir||'',level:w.level||'',stop:w.inval||'',size:(TIERNAME[w.tier]||''),hold:w.hold||'',why:(th?th.title:'')||w.thtext||''});renderAllowed();}
+function fillPrepPulls(){const ps=$('pp_posPull');if(ps)ps.innerHTML='<option value="">↓ Pull from open positions…</option>'+DB.active.map(a=>`<option value="${a.id}">${esc(a.inst||'?')} ${esc(a.dir||'')}</option>`).join('');
+  const al=$('pp_allowedPull');if(al)al.innerHTML='<option value="">↓ Pull from watchlist…</option>'+DB.watchlist.map(w=>`<option value="${w.id}">${esc(w.inst||'?')} ${esc(w.dir||'')}${w.level?' @ '+esc(w.level):''}</option>`).join('');}
+function loadPrepForToday(){if(!$('pp_date').value)$('pp_date').value=todayStr();fillPrepPulls();const p=DB.preps[$('pp_date').value];
+  if(p){$('pp_market').value=p.market||'';$('pp_narr').value=p.narr||'';$('pp_cal').value=p.cal||'';$('pp_dis').value=p.dis||'';$('pp_summary').value=p.summary||'';$('pp_planNote').value=p.planNote||'';if(p.state)segSet('pp_state',p.state);prepPos=Array.isArray(p.positions)?JSON.parse(JSON.stringify(p.positions)):[];allowedTrades=Array.isArray(p.allowedTrades)?JSON.parse(JSON.stringify(p.allowedTrades)):[];}
+  else{['pp_market','pp_narr','pp_cal','pp_dis','pp_summary','pp_planNote'].forEach(i=>$(i).value='');prepPos=[];allowedTrades=[];}
   renderPrepPos();renderAllowed();}
 function savePrep(){const date=$('pp_date').value||todayStr();
-  DB.preps[date]={date,state:SEG.pp_state||'',market:$('pp_market').value,narr:$('pp_narr').value,cal:$('pp_cal').value,dis:$('pp_dis').value,summary:$('pp_summary').value,positions:prepPos.filter(p=>p.inst),allowedTrades:allowedTrades.filter(a=>a.inst)};saveDB();toast('Prep saved');renderBadges();}
+  DB.preps[date]={date,state:SEG.pp_state||'',market:$('pp_market').value,narr:$('pp_narr').value,cal:$('pp_cal').value,dis:$('pp_dis').value,planNote:$('pp_planNote').value,summary:$('pp_summary').value,positions:prepPos.filter(p=>p.inst),allowedTrades:allowedTrades.filter(a=>a.inst)};saveDB();toast('Prep saved');renderBadges();renderToday();}
 function buildPrepText(){savePrep();const p=DB.preps[$('pp_date').value||todayStr()];
-  const posTxt=(p.positions&&p.positions.length)?p.positions.map(x=>`• ${x.inst} ${x.dir} ${x.size?'('+x.size+')':''} — ${x.why||''}${x.adds?' | add if '+x.adds:''}${x.inval?' | wrong if '+x.inval:''}`).join('\n'):'flat';
-  const planTxt=(p.allowedTrades&&p.allowedTrades.length)?p.allowedTrades.map(a=>`• ${a.inst} ${a.dir} ${a.size?'('+a.size+')':''} if ${a.level||'—'} | stop ${a.stop||'—'} | exp hold ${a.hold||'—'}${a.why?' — '+a.why:''}`).join('\n'):'—';
-  const summary=p.summary?`\n\nWhat I'm thinking:\n${p.summary}`:'';
-  const txt=`MORNING PREP — ${p.date}\n\nMarket state: ${p.market||'—'}\nTop narrative: ${p.narr||'—'}\nCalendar/catalysts: ${p.cal||'—'}\n\nPositions on:\n${posTxt}\n\nToday's plan:\n${planTxt}\n\nNot touching: ${p.dis||'—'}${summary}`;
-  $('pp_copy').textContent=txt;$('pp_out').style.display='block';}
+  let dateStr=p.date;try{dateStr=new Date(p.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});}catch(e){}
+  const posTxt=(p.positions&&p.positions.length)?p.positions.map(x=>{
+    let s=`• ${x.inst} ${x.dir}${x.size?' ('+x.size+')':''}${x.why?' — '+x.why:''}`;
+    const sub=[];if(x.adds)sub.push('add if '+x.adds);if(x.inval)sub.push('wrong if '+x.inval);
+    if(sub.length)s+='\n   '+sub.join(' · ');return s;}).join('\n\n'):'flat';
+  const planTrades=(p.allowedTrades||[]).map(a=>{
+    let s=`• ${a.inst} ${a.dir}${a.size?' ('+a.size+')':''} — if ${a.level||'—'}`;
+    const meta=[];if(a.stop)meta.push('stop '+a.stop);if(a.hold)meta.push('hold '+a.hold);
+    if(meta.length)s+='\n   '+meta.join(' · ');
+    if(a.why)s+='\n   '+a.why;return s;});
+  let planBlock=planTrades.join('\n\n');
+  if(p.planNote)planBlock=(planBlock?planBlock+'\n\n':'')+p.planNote;
+  if(!planBlock)planBlock='—';
+  const secs=[];
+  secs.push(`Morning Prep — ${dateStr}`);
+  secs.push(`MARKET\n${p.market||'—'}`);
+  secs.push(`TOP NARRATIVE\n${p.narr||'—'}`);
+  if(p.cal)secs.push(`CALENDAR\n${p.cal}`);
+  secs.push(`POSITIONS ON\n${posTxt}`);
+  secs.push(`TODAY'S PLAN\n${planBlock}`);
+  if(p.dis)secs.push(`NOT TOUCHING\n${p.dis}`);
+  if(p.summary)secs.push(`WHAT I'M THINKING\n${p.summary}`);
+  $('pp_copy').textContent=secs.join('\n\n');$('pp_out').style.display='block';}
 function copyPrep(){navigator.clipboard.writeText($('pp_copy').textContent).then(()=>toast('Copied'));}
 
 /* ============ THESES ============ */
@@ -562,21 +595,28 @@ function clearGate(){['g_inst','g_thtext','g_inval','g_level','g_rr','g_hold','g
 function saveToWatch(){const snap=gateSnapshot();if(!snap.inst){toast('Add an instrument first');return;}
   if(gateWatchId){const i=DB.watchlist.findIndex(w=>w.id==gateWatchId);if(i>-1){snap.id=gateWatchId;snap.savedAt=DB.watchlist[i].savedAt;DB.watchlist[i]=snap;saveDB();renderBadges();clearGate();toast('Watchlist item updated');return;}}
   snap.id=uid();snap.savedAt=Date.now();DB.watchlist.unshift(snap);saveDB();renderBadges();clearGate();toast('Saved to watchlist');}
-function gateToJournal(){const snap=gateSnapshot();prefillTradeFromSnap(snap);if(gateWatchId){DB.watchlist=DB.watchlist.filter(w=>w.id!=gateWatchId);saveDB();renderBadges();}clearGate();go('journal');toast('Fill P&L and save');}
+function gateToActive(){const snap=gateSnapshot();if(!snap.inst){toast('Add an instrument first');return;}snap.id=uid();snap.enteredAt=Date.now();DB.active.unshift(snap);if(gateWatchId){DB.watchlist=DB.watchlist.filter(w=>w.id!=gateWatchId);}clearGate();saveDB();renderBadges();renderToday();go('watch');toast('Open position created — journal it when you close');}
 
-/* ============ WATCHLIST ============ */
-function renderWatch(){const el=$('watchList');if(!DB.watchlist.length){el.innerHTML='<div class="empty">Nothing waiting. Check a trade in the Gate and "Save to watchlist".</div>';return;}
-  el.innerHTML=DB.watchlist.map(w=>{const th=DB.theses.find(t=>t.id==w.thesisId);
+/* ============ WATCHLIST + OPEN POSITIONS ============ */
+function renderWatch(){const el=$('watchList');let html='';
+  html+=`<div class="sectiontitle" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:4px 0 10px">Open positions — entered, not yet closed</div>`;
+  html+=DB.active.length?DB.active.map(w=>{const th=DB.theses.find(t=>t.id==w.thesisId);
+    return`<div class="lc" style="border-color:var(--gold-line)"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta"><span class="chip teal">${w.mode=='pos'?'Position':(w.mode=='tac'?'Tactical':'—')}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>entered ${ageStr(w.enteredAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
+    ${w.level?`<div class="lc-meta" style="color:var(--gold)">▸ entry: ${esc(w.level)}</div>`:''}
+    <div class="lc-body">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">✕ wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
+    <div class="lc-actions"><button class="btn sm" onclick="activeToJournal('${w.id}')">Closed → journal</button><button class="btn ghost sm" onclick="activeToGate('${w.id}')">Re-check / manage</button><button class="btn danger sm" onclick="deleteActive('${w.id}')">Remove</button></div></div>`;}).join(''):'<div class="empty">No open positions. Mark a watchlist item "Entered" when you put it on.</div>';
+  html+=`<div class="sectiontitle" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:22px 0 10px">Watching — gate-checked, waiting for the trigger</div>`;
+  html+=DB.watchlist.length?DB.watchlist.map(w=>{const th=DB.theses.find(t=>t.id==w.thesisId);
     return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta"><span class="chip teal">${w.mode=='pos'?'Position':(w.mode=='tac'?'Tactical':'—')}</span>${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>${ageStr(w.savedAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
     ${w.level?`<div class="lc-meta" style="color:var(--gold)">▸ trigger: ${esc(w.level)}</div>`:''}
     <div class="lc-body">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">✕ wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
-    <div class="lc-actions"><button class="btn sm" onclick="watchToJournal('${w.id}')">Entered → journal</button><button class="btn ghost sm" onclick="watchToPlan('${w.id}')">→ Today's plan</button><button class="btn ghost sm" onclick="watchToGate('${w.id}')">Re-check</button><button class="btn danger sm" onclick="deleteWatch('${w.id}')">Delete</button></div></div>`;}).join('');}
-function watchToPlan(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;const d=todayStr();if(!DB.preps[d])DB.preps[d]={date:d,positions:[],allowedTrades:[]};if(!Array.isArray(DB.preps[d].allowedTrades))DB.preps[d].allowedTrades=[];
-  const th=DB.theses.find(t=>t.id==w.thesisId);
-  DB.preps[d].allowedTrades.push({inst:w.inst||'',dir:w.dir||'',level:w.level||'',stop:w.inval||'',size:({a:'Max',b:'Medium',c:'Probe'}[w.tier]||''),hold:w.hold||'',why:(th?th.title:'')||w.thtext||''});
-  saveDB();toast('Added to today\'s plan');go('prep');}
+    <div class="lc-actions"><button class="btn sm" onclick="markEntered('${w.id}')">Mark entered</button><button class="btn ghost sm" onclick="watchToGate('${w.id}')">Re-check</button><button class="btn danger sm" onclick="deleteWatch('${w.id}')">Delete</button></div></div>`;}).join(''):'<div class="empty">Nothing waiting. Check a trade in the Gate and "Save to watchlist".</div>';
+  el.innerHTML=html;}
+function markEntered(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;const a=Object.assign({},w);a.enteredAt=Date.now();DB.active.unshift(a);DB.watchlist=DB.watchlist.filter(x=>x.id!=id);saveDB();renderWatch();renderBadges();renderToday();toast('Marked entered — now an open position');}
+function deleteActive(id){if(!confirm('Remove this open position?'))return;DB.active=DB.active.filter(x=>x.id!=id);saveDB();renderWatch();renderBadges();renderToday();toast('Removed');}
+function activeToJournal(id){const a=DB.active.find(x=>x.id==id);if(!a)return;prefillTradeFromSnap(a);DB.active=DB.active.filter(x=>x.id!=id);saveDB();renderBadges();renderToday();go('journal');toast('Closed — fill P&L and save');}
+function activeToGate(id){const a=DB.active.find(x=>x.id==id);if(!a)return;gateWatchId=null;go('gate');setTimeout(()=>{$('g_inst').value=a.inst||'';$('g_thtext').value=a.thtext||'';$('g_inval').value=a.inval||'';$('g_level').value=a.level||'';$('g_hold').value=a.hold||'';if(a.mfe)segSet('g_mfe',a.mfe);if(a.maxloss)$('g_maxloss').value=a.maxloss;if(a.rr)$('g_rr').value=a.rr;if(a.dir)segSet('g_dir',a.dir);if(a.mode)segSet('g_mode',a.mode);if(a.eng)segSet('g_eng',a.eng);if(a.tier)segSet('g_tier',a.tier);if(a.thesisId)$('g_thesis').value=a.thesisId;gate();},60);}
 function deleteWatch(id){DB.watchlist=DB.watchlist.filter(w=>w.id!=id);saveDB();renderWatch();renderBadges();toast('Removed');}
-function watchToJournal(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;prefillTradeFromSnap(w);DB.watchlist=DB.watchlist.filter(x=>x.id!=id);saveDB();renderBadges();go('journal');toast('Promoted — fill P&L and save');}
 function watchToGate(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;gateWatchId=id;go('gate');setTimeout(()=>{$('g_inst').value=w.inst||'';$('g_thtext').value=w.thtext||'';$('g_inval').value=w.inval||'';$('g_level').value=w.level||'';$('g_hold').value=w.hold||'';if(w.mfe)segSet('g_mfe',w.mfe);if(w.maxloss)$('g_maxloss').value=w.maxloss;if(w.rr)$('g_rr').value=w.rr;if(w.dir)segSet('g_dir',w.dir);if(w.mode)segSet('g_mode',w.mode);if(w.eng)segSet('g_eng',w.eng);if(w.tier)segSet('g_tier',w.tier);if(w.thesisId)$('g_thesis').value=w.thesisId;gate();},60);}
 
 /* ============ JOURNAL ============ */
@@ -616,7 +656,7 @@ function renderBadges(){$('bThe').textContent=DB.theses.filter(t=>t.status!='clo
 function renderAll(){renderBadges();renderToday();}
 
 /* ============ INIT ============ */
-loadDB().then(db=>{DB=db;if(!DB.settings)DB.settings=defaultDB().settings;['preps','theses','watchlist','journal','marks','marksFinal'].forEach(k=>{if(!DB[k])DB[k]=defaultDB()[k];});
+loadDB().then(db=>{DB=db;if(!DB.settings)DB.settings=defaultDB().settings;['preps','theses','watchlist','active','journal','marks','marksFinal'].forEach(k=>{if(!DB[k])DB[k]=defaultDB()[k];});
   $('pp_date').value=todayStr();$('j_date').value=todayStr();fillThesisSelects();renderAll();});
 </script>
 </body>

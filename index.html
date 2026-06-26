@@ -238,6 +238,7 @@ textarea{resize:vertical;min-height:42px;line-height:1.5}::placeholder{color:var
           <div class="fld"><label>Written thesis?</label><div class="seg" id="g_prep"><button data-v="yes" onclick="seg('g_prep',this)">Written</button><button data-v="thin" onclick="seg('g_prep',this)">"chance"</button><button data-v="no" onclick="seg('g_prep',this)">None</button></div></div>
           <div class="fld"><label>One-sentence thesis</label><textarea id="g_thtext" placeholder="View + transmission." oninput="gate()"></textarea></div>
           <div class="fld"><label>Written invalidation</label><input type="text" id="g_inval" placeholder="level/event that proves it wrong" oninput="gate()"></div>
+          <div class="fld"><label>Add if <span class="opt">— what has to happen before you add to it</span></label><input type="text" id="g_addif" placeholder="proof level reclaims · momentum confirms · next pullback holds" oninput="gate()"></div>
           <div class="row"><div class="fld"><label>Reward : Risk</label><input type="number" id="g_rr" step="0.1" placeholder="≥2.0" oninput="gate()"></div>
             <div class="fld"><label>On the plan?</label><div class="seg" id="g_plan"><button data-v="on" onclick="seg('g_plan',this)">On plan</button><button data-v="off" onclick="seg('g_plan',this)">Appeared today</button></div></div></div>
         </div></div>
@@ -417,7 +418,7 @@ function renderToday(){
   $('todayPositions').innerHTML=DB.active.length?DB.active.map(a=>{const th=DB.theses.find(t=>t.id==a.thesisId);
     return`<div class="lc" onclick="go('watch')" style="cursor:pointer;border-color:var(--gold-line)">
       <div class="lc-top"><div><div class="lc-title">${esc(a.inst||'—')} <span class="lc-meta" style="display:inline">${esc(a.dir||'')}</span></div><div class="lc-meta">${a.conviction?'<span class="chip '+a.conviction+'">'+a.conviction+'</span>':''}${sizeChip(a.tier)}${modeChip(a.mode)}<span>entered ${ageStr(a.enteredAt)}</span></div></div></div>
-      ${(th||a.thtext)?`<div class="lc-body" style="color:var(--text)">${esc(th?th.title:a.thtext)}</div>`:''}${a.inval?`<div class="lc-meta">wrong if: ${esc(a.inval)}</div>`:''}</div>`;}).join(''):'<div class="empty">Flat — no open positions. Mark a watchlist item entered when you put one on.</div>';
+      ${(th||a.thtext)?`<div class="lc-body" style="color:var(--text)">${esc(th?th.title:a.thtext)}</div>`:''}${a.inval?`<div class="lc-meta">wrong if: ${esc(a.inval)}</div>`:''}${a.addif?`<div class="lc-meta" style="color:var(--green)">add if: ${esc(a.addif)}</div>`:''}</div>`;}).join(''):'<div class="empty">Flat — no open positions. Mark a watchlist item entered when you put one on.</div>';
   const tt=DB.theses.filter(t=>t.status!='closed').sort((a,b)=>(a.conviction||'C').localeCompare(b.conviction||'C')).slice(0,4);
   $('todayTheses').innerHTML=tt.length?tt.map(t=>`<div onclick="editThesis('${t.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer"><div><span class="chip ${t.conviction}">${t.conviction||'?'}</span> ${esc(t.title)}</div><span class="lc-meta">${esc(t.products||'')}${t.products&&t.direction?' · ':''}${esc(t.direction||'')}</span></div>`).join(''):'<div class="empty">No theses yet.</div>';
   $('todayWatch').innerHTML=DB.watchlist.length?DB.watchlist.slice(0,4).map(w=>`<div onclick="go('watch')" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer"><div>${esc(w.inst||'—')} <span class="lc-meta">${esc(w.dir||'')}</span>${w.level?`<span class="lc-meta" style="color:var(--gold)"> ▸ ${esc(w.level)}</span>`:''}</div><span class="lc-meta">${ageStr(w.savedAt)}</span></div>`).join(''):'<div class="empty">Nothing waiting.</div>';
@@ -437,17 +438,32 @@ function sizeChip(tier){const m={a:['sza','Max'],b:['szb','Medium'],c:['szc','Pr
 function modeChip(mode){const t=mode=='pos'?'Position':(mode=='tac'?'Tactical':(mode||''));return t?'<span class="chip">'+t+'</span>':'';}
 function processAdherence(){const j=DB.journal.filter(t=>t.process);if(!j.length)return{pct:'—',n:0};const f=j.filter(t=>t.process=='followed').length;return{pct:Math.round(f/j.length*100),n:j.length};}
 function saveTodayMark(){const v=num('todayMark');if(!DB.marks)DB.marks={};if(v==null)delete DB.marks[todayStr()];else DB.marks[todayStr()]=v;saveDB();renderToday();toast('Mark updated');}
-function renderMarksLedger(){const el=$('marksLedger');if(!el)return;const dates=Object.keys(DB.marks||{}).sort().reverse().slice(0,10);
-  if(!dates.length){el.innerHTML='';return;}
-  el.innerHTML='<div class="lc-meta" style="margin-bottom:7px">Recent daily marks — edit any day to reconcile, mark Final once the official number is in.</div>'+
-    dates.map(d=>{const v=DB.marks[d];const fin=DB.marksFinal&&DB.marksFinal[d];const pos=v>0;
-    return`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">
-      <span class="lc-meta" style="width:88px">${d}</span>
-      <input type="number" value="${v}" oninput="editMark('${d}',this.value)" style="width:120px;padding:5px 8px;font-size:13px">
-      <span class="chip ${pos?'g':'r'}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</span>
-      <button class="btn ${fin?'':'ghost'} sm" style="margin-left:auto" onclick="toggleMarkFinal('${d}')">${fin?'✓ Final':'Provisional'}</button>
-      <button class="btn ghost sm" onclick="deleteMark('${d}')">✕</button></div>`;}).join('');}
-function editMark(d,val){const v=parseFloat(val);if(isNaN(v))return;DB.marks[d]=v;saveDB();/* live-update stats without full re-render to keep focus */const r=recoveryState();}
+function dStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dayLabel(dd,isToday){let s=dd;try{s=new Date(dd+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}catch(e){}return s+(isToday?' · today':'');}
+let showSettled=false;
+function toggleSettled(){showSettled=!showSettled;renderMarksLedger();}
+function renderMarksLedger(){const el=$('marksLedger');if(!el)return;const today=todayStr();
+  const days=[];let d=new Date();let c=0;while(c<10){const w=d.getDay();if(w!=0&&w!=6){days.push(dStr(d));c++;}d.setDate(d.getDate()-1);}
+  Object.keys(DB.marks||{}).forEach(k=>{if(!days.includes(k))days.push(k);});
+  const all=days.sort().reverse();const fin=dd=>DB.marksFinal&&DB.marksFinal[dd];
+  const open=all.filter(dd=>!fin(dd)).slice(0,15);const settled=all.filter(dd=>fin(dd));
+  let html='<div class="lc-meta" style="margin-bottom:7px">Daily marks — fill any blank weekday, then Mark final to settle it and clear it from this list (it still counts in your week/month).</div>';
+  html+=open.map(dd=>{const has=DB.marks&&DB.marks[dd]!=null&&!isNaN(DB.marks[dd]);const v=has?DB.marks[dd]:'';const isToday=dd==today;const lbl=dayLabel(dd,isToday);
+    return`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)${has?'':';opacity:.9'}">
+      <span class="lc-meta" style="width:118px">${lbl}</span>
+      <input type="number" value="${v}" placeholder="${isToday?'today':'(blank)'}" oninput="editMark('${dd}',this.value)" style="width:120px;padding:5px 8px;font-size:13px">
+      ${has?`<span class="chip ${v>0?'g':'r'}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</span>`:'<span class="lc-meta" style="color:var(--faint)">no mark yet</span>'}
+      <button class="btn ghost sm" style="margin-left:auto" ${has?'':'disabled'} onclick="toggleMarkFinal('${dd}')">Mark final</button>
+      <button class="btn ghost sm" onclick="deleteMark('${dd}')">✕</button></div>`;}).join('');
+  if(!open.length)html+='<div class="empty">All caught up — every recent weekday is settled.</div>';
+  if(settled.length){html+=`<div style="margin-top:10px"><button class="btn ghost sm" onclick="toggleSettled()">${showSettled?'Hide':'Show'} ${settled.length} settled day${settled.length==1?'':'s'}</button></div>`;
+    if(showSettled)html+='<div style="margin-top:8px">'+settled.slice(0,40).map(dd=>{const v=DB.marks[dd];return`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);opacity:.7">
+      <span class="lc-meta" style="width:118px">${dayLabel(dd,dd==today)}</span>
+      <span class="chip ${v>0?'g':'r'}">${v<0?'−$':'$'}${fmt(Math.abs(v))}</span>
+      <span class="lc-meta" style="margin-left:auto;color:var(--green)">✓ settled</span>
+      <button class="btn ghost sm" onclick="toggleMarkFinal('${dd}')">reopen</button></div>`;}).join('')+'</div>';}
+  el.innerHTML=html;}
+function editMark(d,val){if(val===''||val==null){if(DB.marks)delete DB.marks[d];saveDB();return;}const v=parseFloat(val);if(isNaN(v))return;DB.marks[d]=v;saveDB();}
 function toggleMarkFinal(d){if(!DB.marksFinal)DB.marksFinal={};DB.marksFinal[d]=!DB.marksFinal[d];saveDB();renderToday();}
 function deleteMark(d){delete DB.marks[d];if(DB.marksFinal)delete DB.marksFinal[d];saveDB();renderToday();toast('Mark removed');}
 
@@ -489,7 +505,10 @@ function fillPrepPulls(){const ps=$('pp_posPull');if(ps)ps.innerHTML='<option va
   const al=$('pp_allowedPull');if(al)al.innerHTML='<option value="">↓ Pull from watchlist…</option>'+DB.watchlist.map(w=>`<option value="${w.id}">${esc(w.inst||'?')} ${esc(w.dir||'')}${w.level?' @ '+esc(w.level):''}</option>`).join('');}
 function loadPrepForToday(){if(!$('pp_date').value)$('pp_date').value=todayStr();fillPrepPulls();const p=DB.preps[$('pp_date').value];
   if(p){$('pp_market').value=p.market||'';$('pp_narr').value=p.narr||'';$('pp_cal').value=p.cal||'';$('pp_dis').value=p.dis||'';$('pp_summary').value=p.summary||'';$('pp_planNote').value=p.planNote||'';if(p.state)segSet('pp_state',p.state);prepPos=Array.isArray(p.positions)?JSON.parse(JSON.stringify(p.positions)):[];allowedTrades=Array.isArray(p.allowedTrades)?JSON.parse(JSON.stringify(p.allowedTrades)):[];}
-  else{['pp_market','pp_narr','pp_cal','pp_dis','pp_summary','pp_planNote'].forEach(i=>$(i).value='');prepPos=[];allowedTrades=[];}
+  else{['pp_market','pp_narr','pp_cal','pp_dis','pp_summary','pp_planNote'].forEach(i=>$(i).value='');allowedTrades=[];
+    const cur=$('pp_date').value;const prior=Object.keys(DB.preps).filter(k=>k<cur).sort().pop();
+    const carry=prior&&Array.isArray(DB.preps[prior].positions)?DB.preps[prior].positions:[];
+    prepPos=JSON.parse(JSON.stringify(carry));}
   renderPrepPos();renderAllowed();}
 function savePrep(){const date=$('pp_date').value||todayStr();
   DB.preps[date]={date,state:SEG.pp_state||'',market:$('pp_market').value,narr:$('pp_narr').value,cal:$('pp_cal').value,dis:$('pp_dis').value,planNote:$('pp_planNote').value,summary:$('pp_summary').value,positions:prepPos.filter(p=>p.inst),allowedTrades:allowedTrades.filter(a=>a.inst)};saveDB();toast('Prep saved');renderBadges();renderToday();}
@@ -531,11 +550,16 @@ function resetThesisForm(){editingThesis=null;['th_title','th_products','th_narr
 function deleteThesis(id){if(!confirm('Delete this thesis?'))return;DB.theses=DB.theses.filter(x=>x.id!=id);saveDB();renderTheses();renderBadges();toast('Deleted');}
 function thesisPnl(id){return DB.journal.filter(t=>t.thesisId==id&&t.pnl!=null).reduce((s,t)=>s+t.pnl,0);}
 function renderTheses(){const el=$('thesisList');if(!DB.theses.length){el.innerHTML='<div class="empty">No theses yet. Add your first above.</div>';return;}
-  el.innerHTML=DB.theses.map(t=>{const pnl=thesisPnl(t.id);const n=DB.journal.filter(x=>x.thesisId==t.id).length;
-    return`<div class="lc"><div class="lc-top"><div><div class="lc-title">${esc(t.title)}</div><div class="lc-meta"><span class="chip ${t.conviction}">${t.conviction}</span><span class="chip ${t.status=='active'?'g':(t.status=='watch'?'y':'')}">${t.status}</span>${esc(t.products||'')}</div></div><div style="text-align:right"><div class="lc-meta"><span class="chip ${pnl>0?'pnlpos':(pnl<0?'pnlneg':'')}">${pnl<0?'−$':'$'}${fmt(Math.abs(pnl))}</span></div><div class="lc-meta" style="margin-top:4px">${n} trade${n==1?'':'s'}</div></div></div>
+  const card=t=>{const pnl=thesisPnl(t.id);const n=DB.journal.filter(x=>x.thesisId==t.id).length;
+    return`<div class="lc"${t.status=='closed'?' style="opacity:.72"':''}><div class="lc-top"><div><div class="lc-title">${esc(t.title)}</div><div class="lc-meta"><span class="chip ${t.conviction}">${t.conviction}</span><span class="chip ${t.status=='active'?'g':(t.status=='watch'?'y':'')}">${t.status}</span>${esc(t.products||'')}</div></div><div style="text-align:right"><div class="lc-meta"><span class="chip ${pnl>0?'pnlpos':(pnl<0?'pnlneg':'')}">${pnl<0?'−$':'$'}${fmt(Math.abs(pnl))}</span></div><div class="lc-meta" style="margin-top:4px">${n} trade${n==1?'':'s'}</div></div></div>
     <div class="lc-body" style="color:var(--text)">${esc(t.narr||'')}</div>
     ${t.inval?`<div class="lc-meta">wrong if: ${esc(t.inval)}</div>`:''}
-    <div class="lc-actions"><button class="btn ghost sm" onclick="editThesis('${t.id}')">Edit</button><button class="btn ghost sm" onclick="gateFromThesis('${t.id}')">Check in gate</button><button class="btn danger sm" onclick="deleteThesis('${t.id}')">Delete</button></div></div>`;}).join('');}
+    <div class="lc-actions"><button class="btn ghost sm" onclick="editThesis('${t.id}')">Edit</button><button class="btn ghost sm" onclick="gateFromThesis('${t.id}')">Check in gate</button><button class="btn danger sm" onclick="deleteThesis('${t.id}')">Delete</button></div></div>`;};
+  const sec='font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:4px 0 10px';
+  const open=DB.theses.filter(t=>t.status!='closed');const closed=DB.theses.filter(t=>t.status=='closed');
+  let html=open.length?open.map(card).join(''):'<div class="empty">No open theses.</div>';
+  if(closed.length)html+=`<div style="${sec};margin-top:22px">Closed</div>`+closed.map(card).join('');
+  el.innerHTML=html;}
 
 /* ============ GATE ============ */
 function fillThesisSelects(){const opts='<option value="">— none —</option>'+DB.theses.filter(t=>t.status!='closed').map(t=>`<option value="${t.id}">${esc(t.title)} (${t.conviction})</option>`).join('');$('g_thesis').innerHTML=opts;$('j_thesis').innerHTML=opts;}
@@ -604,9 +628,9 @@ function flagEl(id,m){const e=$(id);if(m){e.textContent=m;e.className='flag red 
 function buildTicket(red,amber,todo,d){if(todo||red){$('ticketOut').textContent=red&&!todo?'⛔ Blocked by a rule — no ticket.':'Clear the gates to assemble a ticket.';return;}
   const ct=(d.maxLoss&&d.riskPer)?Math.floor(d.maxLoss/d.riskPer):'—';const mode=d.rec.active?'Recovery (auto)':(SEG.g_mode=='pos'?'Position':'Tactical');
   $('ticketOut').textContent=`VERDICT   ${amber?'CONDITIONAL':'CLEARED'}\nMODE      ${mode}\nPRODUCT   ${$('g_inst').value||'—'} (${d.prod?d.prod.p.toUpperCase():'?'}) · ${SEG.g_dir||'—'}\nHOLD      ${$('g_hold').value||'—'}\nTHESIS    ${$('g_thtext').value||'—'}\nWRONG IF  ${$('g_inval').value||'—'}\nTRIGGER   ${$('g_level').value||'—'}\nCEILING   $${d.effCap!=null?fmt(d.effCap):'—'}\nMAX LOSS  $${d.maxLoss!=null?fmt(d.maxLoss):'—'}\nSIZE      ${ct} contracts`;}
-function gateSnapshot(){return{inst:$('g_inst').value,dir:SEG.g_dir||'',mode:SEG.g_mode||'',eng:SEG.g_eng||'',conviction:SEG.g_conv||'',ready:SEG.g_ready||'',prep:SEG.g_prep||'',plan:SEG.g_plan||'',corr:SEG.g_corr||'',mid:SEG.g_mid||'',thesisId:$('g_thesis').value||'',thtext:$('g_thtext').value,inval:$('g_inval').value,level:$('g_level').value,hold:$('g_hold').value,mfe:SEG.g_mfe||'',maxloss:num('g_maxloss'),rr:num('g_rr'),tier:SEG.g_tier||''};}
+function gateSnapshot(){return{inst:$('g_inst').value,dir:SEG.g_dir||'',mode:SEG.g_mode||'',eng:SEG.g_eng||'',conviction:SEG.g_conv||'',ready:SEG.g_ready||'',prep:SEG.g_prep||'',plan:SEG.g_plan||'',corr:SEG.g_corr||'',mid:SEG.g_mid||'',thesisId:$('g_thesis').value||'',thtext:$('g_thtext').value,inval:$('g_inval').value,addif:$('g_addif').value,level:$('g_level').value,hold:$('g_hold').value,mfe:SEG.g_mfe||'',maxloss:num('g_maxloss'),rr:num('g_rr'),tier:SEG.g_tier||''};}
 let gateWatchId=null;
-function clearGate(){['g_inst','g_thtext','g_inval','g_level','g_rr','g_hold','g_maxloss','g_riskper'].forEach(i=>{if($(i))$(i).value='';});
+function clearGate(){['g_inst','g_thtext','g_inval','g_addif','g_level','g_rr','g_hold','g_maxloss','g_riskper'].forEach(i=>{if($(i))$(i).value='';});
   ['g_ready','g_mode','g_dir','g_eng','g_conv','g_prep','g_plan','g_corr','g_mid','g_tier','g_mfe'].forEach(g=>{const c=$(g);if(c)c.querySelectorAll('button').forEach(b=>b.classList.remove('on','danger','good'));delete SEG[g];});
   if($('g_thesis'))$('g_thesis').value='';if($('g_mfeDesc'))$('g_mfeDesc').textContent='';gateWatchId=null;gate();}
 function saveToWatch(){const snap=gateSnapshot();if(!snap.inst){toast('Add an instrument first');return;}
@@ -621,6 +645,7 @@ function renderWatch(){const el=$('watchList');let html='';
     return`<div class="lc" style="border-color:var(--gold-line)"><div class="lc-top"><div><div class="lc-title">${esc(w.inst||'—')} <span class="lc-meta" style="display:inline">${esc(w.dir||'')}</span></div><div class="lc-meta">${w.conviction?'<span class="chip '+w.conviction+'">'+w.conviction+'</span>':''}${sizeChip(w.tier)}${modeChip(w.mode)}${th?'<span class="chip">'+esc(th.title)+'</span>':''}<span>entered ${ageStr(w.enteredAt)}</span></div></div><div class="lc-meta">${w.maxloss?'risk $'+fmt(w.maxloss):''}</div></div>
     ${w.level?`<div class="lc-meta" style="color:var(--gold)">▸ entry: ${esc(w.level)}</div>`:''}
     <div class="lc-body" style="color:var(--text)">${esc(w.thtext||'')}</div>${w.inval?`<div class="lc-meta">wrong if: ${esc(w.inval)}</div>`:''}${w.hold?`<div class="lc-meta">⏱ ${esc(w.hold)}</div>`:''}
+    <div style="margin-top:9px"><div class="lc-meta" style="color:var(--green);margin-bottom:3px">Add if</div><input type="text" value="${esc(w.addif||'')}" placeholder="conditions before you add to this position" oninput="updActiveField('${w.id}','addif',this.value)" style="width:100%;padding:6px 9px;font-size:12.5px"></div>
     <div class="lc-actions"><button class="btn sm" onclick="activeToJournal('${w.id}')">Closed → journal</button><button class="btn ghost sm" onclick="activeToGate('${w.id}')">Re-check / manage</button><button class="btn danger sm" onclick="deleteActive('${w.id}')">Remove</button></div></div>`;}).join(''):'<div class="empty">No open positions. Mark a watchlist item "Entered" when you put it on.</div>';
   html+=`<div class="sectiontitle" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:22px 0 10px">Watching — gate-checked, waiting for the trigger</div>`;
   html+=DB.watchlist.length?DB.watchlist.map(w=>{const th=DB.theses.find(t=>t.id==w.thesisId);
@@ -632,10 +657,11 @@ function renderWatch(){const el=$('watchList');let html='';
 function markEntered(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;const a=Object.assign({},w);a.enteredAt=Date.now();DB.active.unshift(a);DB.watchlist=DB.watchlist.filter(x=>x.id!=id);saveDB();renderWatch();renderBadges();renderToday();toast('Marked entered — now an open position');}
 function deleteActive(id){if(!confirm('Remove this open position?'))return;DB.active=DB.active.filter(x=>x.id!=id);saveDB();renderWatch();renderBadges();renderToday();toast('Removed');}
 function activeToJournal(id){const a=DB.active.find(x=>x.id==id);if(!a)return;prefillTradeFromSnap(a);DB.active=DB.active.filter(x=>x.id!=id);saveDB();renderBadges();renderToday();go('journal');toast('Closed — fill P&L and save');}
+function updActiveField(id,k,v){const a=DB.active.find(x=>x.id==id);if(a){a[k]=v;saveDB();}}
 function activeToGate(id){const a=DB.active.find(x=>x.id==id);if(!a)return;go('gate');setTimeout(()=>{clearGate();gateWatchId=null;loadGateFrom(a);gate();},60);}
 function deleteWatch(id){DB.watchlist=DB.watchlist.filter(w=>w.id!=id);saveDB();renderWatch();renderBadges();toast('Removed');}
 function watchToGate(id){const w=DB.watchlist.find(x=>x.id==id);if(!w)return;go('gate');setTimeout(()=>{clearGate();gateWatchId=id;loadGateFrom(w);gate();},60);}
-function loadGateFrom(w){$('g_inst').value=w.inst||'';$('g_thtext').value=w.thtext||'';$('g_inval').value=w.inval||'';$('g_level').value=w.level||'';$('g_hold').value=w.hold||'';if(w.maxloss)$('g_maxloss').value=w.maxloss;if(w.rr)$('g_rr').value=w.rr;
+function loadGateFrom(w){$('g_inst').value=w.inst||'';$('g_thtext').value=w.thtext||'';$('g_inval').value=w.inval||'';$('g_addif').value=w.addif||'';$('g_level').value=w.level||'';$('g_hold').value=w.hold||'';if(w.maxloss)$('g_maxloss').value=w.maxloss;if(w.rr)$('g_rr').value=w.rr;
   if(w.dir)segSet('g_dir',w.dir);if(w.mode)segSet('g_mode',w.mode);if(w.eng)segSet('g_eng',w.eng);if(w.conviction)segSet('g_conv',w.conviction);if(w.tier)segSet('g_tier',w.tier);if(w.mfe)segSet('g_mfe',w.mfe);
   if(w.ready)segSet('g_ready',w.ready);if(w.prep)segSet('g_prep',w.prep);if(w.plan)segSet('g_plan',w.plan);if(w.corr)segSet('g_corr',w.corr);if(w.mid)segSet('g_mid',w.mid);
   if(w.thesisId)$('g_thesis').value=w.thesisId;}
